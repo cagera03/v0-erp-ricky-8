@@ -1,0 +1,259 @@
+"use client"
+
+import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
+import { useSalesData } from "@/hooks/use-sales-data"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Plus, Search, FileText, TrendingUp, Clock, Package } from "lucide-react"
+import { formatCurrency } from "@/lib/utils/sales-calculations"
+import type { SalesOrder } from "@/lib/types"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+
+export default function OrdenesVentaPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ""
+  const userId = user?.uid || ""
+  const { salesOrders, stats, loading, error } = useSalesData(companyId, userId)
+
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+
+  useEffect(() => {
+    console.log("[v0] OrdenesVentaPage - user:", user)
+    console.log("[v0] OrdenesVentaPage - companyId:", companyId)
+    console.log("[v0] OrdenesVentaPage - userId:", userId)
+    console.log("[v0] OrdenesVentaPage - salesOrders count:", salesOrders.length)
+    console.log("[v0] OrdenesVentaPage - loading:", loading)
+    console.log("[v0] OrdenesVentaPage - error:", error)
+  }, [user, companyId, userId, salesOrders, loading, error])
+
+  const filteredOrders = useMemo(() => {
+    return salesOrders.filter((order) => {
+      const matchesSearch =
+        order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
+
+      const matchesStatus = statusFilter === "all" || order.status === statusFilter
+
+      return matchesSearch && matchesStatus
+    })
+  }, [salesOrders, searchTerm, statusFilter])
+
+  const getStatusBadge = (status: SalesOrder["status"]) => {
+    const variants = {
+      draft: { label: "Borrador", variant: "secondary" as const },
+      quotation: { label: "Cotización", variant: "outline" as const },
+      confirmed: { label: "Confirmada", variant: "default" as const },
+      in_progress: { label: "En Proceso", variant: "secondary" as const },
+      delivered: { label: "Entregada", variant: "default" as const },
+      invoiced: { label: "Facturada", variant: "default" as const },
+      cancelled: { label: "Cancelada", variant: "destructive" as const },
+    }
+    const config = variants[status] || variants.draft
+    return <Badge variant={config.variant}>{config.label}</Badge>
+  }
+
+  const formatDate = (date: any) => {
+    if (!date) return "N/A"
+    try {
+      const d = date.toDate ? date.toDate() : new Date(date)
+      return format(d, "dd MMM yyyy", { locale: es })
+    } catch {
+      return "Invalid Date"
+    }
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <FileText className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Error al cargar órdenes</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Reintentar</Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Cargando órdenes de venta...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Órdenes de Venta</h1>
+          <p className="text-muted-foreground mt-1">Gestión completa de cotizaciones, órdenes, remisiones y facturas</p>
+        </div>
+        <Button onClick={() => router.push("/dashboard/ventas/ordenes/new")} size="lg">
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Orden
+        </Button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Órdenes</CardTitle>
+            <Package className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalOrders}</div>
+            <p className="text-xs text-muted-foreground mt-1">{stats.confirmedOrders} confirmadas</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Cotizaciones</CardTitle>
+            <FileText className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.quotations}</div>
+            <p className="text-xs text-muted-foreground mt-1">Pendientes de confirmar</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos Confirmados</CardTitle>
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+            <p className="text-xs text-muted-foreground mt-1">Total de órdenes confirmadas</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Por Cobrar</CardTitle>
+            <Clock className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(stats.unpaidAmount)}</div>
+            <p className="text-xs text-muted-foreground mt-1">{stats.unpaidInvoices} facturas pendientes</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por número de orden o cliente..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="draft">Borrador</SelectItem>
+                <SelectItem value="quotation">Cotización</SelectItem>
+                <SelectItem value="confirmed">Confirmada</SelectItem>
+                <SelectItem value="in_progress">En Proceso</SelectItem>
+                <SelectItem value="delivered">Entregada</SelectItem>
+                <SelectItem value="invoiced">Facturada</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-semibold text-lg mb-2">
+                {salesOrders.length === 0 ? "Aún no hay órdenes de venta" : "No se encontraron órdenes"}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {salesOrders.length === 0
+                  ? "Comienza creando tu primera orden de venta o cotización"
+                  : "Intenta con otros filtros de búsqueda"}
+              </p>
+              {salesOrders.length === 0 && (
+                <Button onClick={() => router.push("/dashboard/ventas/ordenes/new")}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Primera Orden
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow
+                      key={order.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => router.push(`/dashboard/ventas/ordenes/${order.id}`)}
+                    >
+                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                      <TableCell>{order.customerName}</TableCell>
+                      <TableCell>{formatDate(order.orderDate)}</TableCell>
+                      <TableCell>{getStatusBadge(order.status)}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(order.total, order.currency)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/dashboard/ventas/ordenes/${order.id}`)
+                          }}
+                        >
+                          Ver Detalle
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

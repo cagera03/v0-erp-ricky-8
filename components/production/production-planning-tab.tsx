@@ -1,0 +1,107 @@
+"use client"
+
+import { useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { FileText, AlertCircle } from "lucide-react"
+import type { MaterialPlanning } from "@/lib/types"
+
+interface ProductionPlanningTabProps {
+  materials: MaterialPlanning[]
+  searchQuery: string
+  onUpdate: (id: string, updates: Partial<MaterialPlanning>) => Promise<MaterialPlanning | null>
+}
+
+export function ProductionPlanningTab({ materials, searchQuery, onUpdate }: ProductionPlanningTabProps) {
+  const filteredMaterials = useMemo(() => {
+    return materials.filter((m) => !searchQuery || m.material.toLowerCase().includes(searchQuery.toLowerCase()))
+  }, [materials, searchQuery])
+
+  const handleGenerateRequisitions = () => {
+    alert("Generando requisiciones de compra para materiales faltantes...")
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Planeación de Materiales (MRP)</CardTitle>
+          <Button variant="outline" size="sm" onClick={handleGenerateRequisitions}>
+            <FileText className="w-4 h-4 mr-2" />
+            Generar Requisiciones
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {filteredMaterials.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No hay materiales planificados</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Material</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Disponible</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Requerido</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Faltante</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Requisición</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMaterials.map((material) => {
+                    const shortage = Math.max(0, material.required - material.available)
+                    const hasShortage = shortage > 0
+                    return (
+                      <tr key={material.id} className="border-b last:border-0">
+                        <td className="py-3 px-2 text-sm font-medium">{material.material}</td>
+                        <td className="py-3 px-2 text-sm">
+                          {material.available} {material.unit}
+                        </td>
+                        <td className="py-3 px-2 text-sm">
+                          {material.required} {material.unit}
+                        </td>
+                        <td className="py-3 px-2">
+                          {hasShortage ? (
+                            <span className="text-sm font-medium text-red-600">
+                              {shortage} {material.unit}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-green-600">Suficiente</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-muted-foreground">{material.purchaseOrderId || "-"}</td>
+                        <td className="py-3 px-2">
+                          <Badge variant={material.status === "sufficient" ? "outline" : "secondary"}>
+                            {material.status === "sufficient"
+                              ? "OK"
+                              : material.status === "critical"
+                                ? "Crítico"
+                                : "Pendiente"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-900">
+                  <strong>Nota:</strong> El sistema puede generar automáticamente requisiciones de compra basándose en
+                  los faltantes detectados, considerando puntos de reorden y máximos de inventario.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}

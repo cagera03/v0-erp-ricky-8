@@ -1,0 +1,323 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasValidUserId() {
+      return isAuthenticated() && 
+             request.resource.data.userId == request.auth.uid;
+    }
+    
+    function belongsToUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Companies
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // CRM Collections
+    match /customers/{customerId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /leads/{leadId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /customerDocuments/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /accountsReceivable/{receivableId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /cfdi/{cfdiId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Banking Collections
+    match /bankAccounts/{accountId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /checks/{checkId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /bankTransfers/{transferId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /bankTransactions/{transactionId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /bankStatements/{statementId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /reconciliationItems/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Inventory & Products
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /warehouses/{warehouseId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /inventoryStock/{stockId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /stockMovements/{movementId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /warehouseTransfers/{transferId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /physicalCounts/{countId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /reorderRules/{ruleId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /productBatches/{batchId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /salesOrders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /salesOrderActivities/{activityId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /deliveries/{deliveryId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /salesInvoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Legacy orders collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /quotations/{quotationId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /supplierProducts/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /supplierDocuments/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /purchaseOrders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /goodsReceipts/{receiptId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /accountsPayable/{payableId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /purchases/{purchaseId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /expenses/{expenseId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /inventorySnapshots/{snapshotId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Production
+    match /productionOrders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /productFormulas/{formulaId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Maintenance & Equipment
+    match /equipment/{equipmentId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /workOrders/{workOrderId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // HR & Employees
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // Accounting
+    match /ledgerAccounts/{accountId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /journalEntries/{entryId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /budgets/{budgetId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /exchangeRates/{rateId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    match /{collection}/{document} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isAuthenticated() && 
+                             resource.data.userId == request.auth.uid;
+    }
+  }
+}
