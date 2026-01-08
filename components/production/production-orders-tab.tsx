@@ -5,28 +5,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Plus, Edit, Trash2 } from "lucide-react"
-import type { ProductionOrder } from "@/lib/types"
+import { Plus, Edit, Trash2, Play, CheckCircle } from "lucide-react"
+import type { ProductionOrder, Product, ProductFormula, Warehouse } from "@/lib/types"
+import { ProductionOrderDialog } from "./production-order-dialog"
 
 interface ProductionOrdersTabProps {
   orders: ProductionOrder[]
+  products: Product[]
+  formulas: ProductFormula[]
+  warehouses: Warehouse[]
   searchQuery: string
   statusFilter: string
   priorityFilter: string
   onCreate: (order: Omit<ProductionOrder, "id">) => Promise<ProductionOrder>
   onUpdate: (id: string, updates: Partial<ProductionOrder>) => Promise<ProductionOrder | null>
   onDelete: (id: string) => Promise<boolean>
+  onReserveMaterials: (orderId: string) => Promise<any>
+  onCompleteProduction: (orderId: string, produced: number, secondQuality: number, waste: number) => Promise<any>
 }
 
 export function ProductionOrdersTab({
   orders,
+  products,
+  formulas,
+  warehouses,
   searchQuery,
   statusFilter,
   priorityFilter,
   onCreate,
   onUpdate,
   onDelete,
+  onReserveMaterials,
+  onCompleteProduction,
 }: ProductionOrdersTabProps) {
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<ProductionOrder | null>(null)
 
   const filteredOrders = useMemo(() => {
@@ -35,8 +47,8 @@ export function ProductionOrdersTab({
         !searchQuery ||
         order.folio.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.productName.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = !statusFilter || order.status === statusFilter
-      const matchesPriority = !priorityFilter || order.priority === priorityFilter
+      const matchesStatus = !statusFilter || statusFilter === "Todos" || order.status === statusFilter
+      const matchesPriority = !priorityFilter || priorityFilter === "Todas" || order.priority === priorityFilter
       return matchesSearch && matchesStatus && matchesPriority
     })
   }, [orders, searchQuery, statusFilter, priorityFilter])
@@ -72,12 +84,21 @@ export function ProductionOrdersTab({
   }
 
   const handleCreate = () => {
-    alert("Abrir modal para crear nueva orden de producción")
+    setSelectedOrder(null)
+    setDialogOpen(true)
   }
 
   const handleEdit = (order: ProductionOrder) => {
     setSelectedOrder(order)
-    alert(`Abrir modal para editar orden ${order.folio}`)
+    setDialogOpen(true)
+  }
+
+  const handleSave = async (data: Omit<ProductionOrder, "id">) => {
+    if (selectedOrder) {
+      await onUpdate(selectedOrder.id, data)
+    } else {
+      await onCreate(data)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -86,80 +107,142 @@ export function ProductionOrdersTab({
     }
   }
 
-  const handleUpdateStatus = async (order: ProductionOrder, newStatus: ProductionOrder["status"]) => {
-    await onUpdate(order.id, { status: newStatus })
+  const handleReserve = async (order: ProductionOrder) => {
+    if (confirm(`¿Reservar materiales para ${order.folio}?`)) {
+      try {
+        await onReserveMaterials(order.id)
+        alert("Materiales reservados exitosamente")
+      } catch (error: any) {
+        alert(error.message || "Error al reservar materiales")
+      }
+    }
+  }
+
+  const handleComplete = async (order: ProductionOrder) => {
+    const produced = prompt(`Cantidad producida (planeado: ${order.quantity}):`)
+    if (!produced) return
+
+    const secondQuality = prompt("Cantidad de segunda calidad:", "0")
+    const waste = prompt("Cantidad de merma/desperdicio:", "0")
+
+    try {
+      await onCompleteProduction(
+        order.id,
+        Number.parseFloat(produced),
+        Number.parseFloat(secondQuality || "0"),
+        Number.parseFloat(waste || "0"),
+      )
+      alert("Producción completada exitosamente")
+    } catch (error: any) {
+      alert(error.message || "Error al completar producción")
+    }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Programación de Órdenes de Producción</CardTitle>
-          <Button onClick={handleCreate}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Orden
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {filteredOrders.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No hay órdenes de producción</p>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Programación de Órdenes de Producción</CardTitle>
+            <Button onClick={handleCreate}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Orden
+            </Button>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Orden</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Producto</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Cantidad</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Progreso</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Estado</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Prioridad</th>
-                  <th className="text-right py-3 px-2 text-sm font-medium text-muted-foreground">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.map((order) => {
-                  const percentage = (order.completed / order.quantity) * 100
-                  return (
-                    <tr key={order.id} className="border-b last:border-0">
-                      <td className="py-3 px-2 text-sm font-medium">{order.folio}</td>
-                      <td className="py-3 px-2 text-sm">{order.productName}</td>
-                      <td className="py-3 px-2 text-sm">
-                        {order.completed} / {order.quantity}
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center gap-2">
-                          <Progress value={percentage} className="h-2 w-24" />
-                          <span className="text-xs text-muted-foreground">{Math.round(percentage)}%</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-2">
-                        <Badge variant={getStatusVariant(order.status)}>{getStatusLabel(order.status)}</Badge>
-                      </td>
-                      <td className="py-3 px-2">
-                        <Badge variant="outline">{order.priority}</Badge>
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(order)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(order.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No hay órdenes de producción</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Orden</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Producto</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Cantidad</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Progreso</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Estado</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Almacenes</th>
+                    <th className="text-right py-3 px-2 text-sm font-medium text-muted-foreground">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order) => {
+                    const percentage = (order.completed / order.quantity) * 100
+                    return (
+                      <tr key={order.id} className="border-b last:border-0">
+                        <td className="py-3 px-2 text-sm font-medium">{order.folio}</td>
+                        <td className="py-3 px-2 text-sm">{order.productName}</td>
+                        <td className="py-3 px-2 text-sm">
+                          {order.completed} / {order.quantity}
+                        </td>
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-2">
+                            <Progress value={percentage} className="h-2 w-24" />
+                            <span className="text-xs text-muted-foreground">{Math.round(percentage)}%</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-2">
+                          <Badge variant={getStatusVariant(order.status)}>{getStatusLabel(order.status)}</Badge>
+                        </td>
+                        <td className="py-3 px-2 text-xs text-muted-foreground">
+                          <div>Origen: {order.almacenOrigenNombre}</div>
+                          <div>Destino: {order.almacenDestinoNombre}</div>
+                        </td>
+                        <td className="py-3 px-2">
+                          <div className="flex items-center justify-end gap-1">
+                            {!order.materialsReserved && order.status === "pending" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleReserve(order)}
+                                title="Reservar materiales"
+                              >
+                                <Play className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {order.materialsReserved && !order.materialsConsumed && order.status === "in_process" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleComplete(order)}
+                                title="Completar producción"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(order)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            {order.status === "pending" && (
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(order.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <ProductionOrderDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSave={handleSave}
+        order={selectedOrder}
+        products={products}
+        formulas={formulas}
+        warehouses={warehouses}
+      />
+    </>
   )
 }

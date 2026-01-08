@@ -836,12 +836,32 @@ export interface ProductionOrder extends BaseDocument {
   formulaId?: string
   batchNumber?: string
   notes?: string
+  almacenOrigenId: string // Warehouse for raw materials
+  almacenOrigenNombre: string
+  almacenDestinoId: string // Warehouse for finished product
+  almacenDestinoNombre: string
+  materialsReserved: boolean // Materials reserved but not consumed
+  materialsConsumed: boolean // Materials actually consumed
+  finishedProductGenerated: boolean // Finished product added to inventory
+  reservedMaterials?: ReservedMaterial[] // Track what was reserved
+}
+
+export interface ReservedMaterial {
+  materialId: string
+  materialName: string
+  quantity: number
+  unit: string
+  lote?: string | null
+  almacenId: string
+  almacenNombre: string
+  reservedAt: Timestamp | string
 }
 
 // Product Formula - Bill of Materials
 export interface ProductFormula extends BaseDocument {
   productId: string
   productName: string
+  sku: string
   version: number
   components: FormulaComponent[]
   laborCost: number
@@ -851,40 +871,63 @@ export interface ProductFormula extends BaseDocument {
   createdBy?: string
   approvedBy?: string
   approvedDate?: Timestamp | string
+  outputQuantity: number // How many units this formula produces
+  outputUnit: string // Unit of the finished product
 }
 
 export interface FormulaComponent {
   materialId: string
   materialName: string
+  sku: string
   quantity: number
   unit: string
   costPerUnit: number
+  conversionFactor?: number // Convert between purchase/base units
 }
 
 // Material Planning - MRP calculations
 export interface MaterialPlanning extends BaseDocument {
   material: string
   materialId: string
-  available: number
-  required: number
+  sku: string
+  available: number // Current stock available
+  reserved: number // Reserved by production orders
+  required: number // Needed for active production orders
+  shortage: number // Calculated: required - (available - reserved)
   unit: string
   purchaseOrderId?: string
   status: "sufficient" | "pending" | "critical"
   lastUpdated: Timestamp | string
+  supplierId?: string
+  supplierName?: string
+  leadTimeDays?: number
+  suggestedOrderQuantity?: number
 }
 
 // Quality Certificate - Quality control records
 export interface QualityCertificate extends BaseDocument {
   productId: string
   productName: string
+  sku: string
   batchNumber: string
   productionOrderId: string
+  productionOrderFolio: string
   inspectionDate: Timestamp | string
   inspector: string
   status: "approved" | "review" | "rejected"
   rating: number // 0-100
   defectsFound?: string[]
+  specifications?: QualitySpecification[]
   notas?: string
+  blocksClosure: boolean // If true, order cannot be completed
+}
+
+export interface QualitySpecification {
+  id: string
+  parameter: string
+  expected: string
+  measured: string
+  passed: boolean
 }
 
 // Production Result - Production outcome tracking
@@ -892,141 +935,36 @@ export interface ProductionResult extends BaseDocument {
   productionOrderId: string
   orderNumber: string
   productName: string
+  sku: string
   plannedQuantity: number
   producedQuantity: number
   secondQualityQuantity: number
-  efficiency: number
+  wasteQuantity: number
+  efficiency: number // (produced / planned) * 100
+  yield: number // ((produced + secondQuality) / (produced + secondQuality + waste)) * 100
   productionDate: Timestamp | string
+  startTime?: Timestamp | string
+  endTime?: Timestamp | string
+  durationMinutes?: number
   notes?: string
+  batchNumber: string
+  almacenDestinoId: string
+  almacenDestinoNombre: string
+  materialsUsed: MaterialUsage[]
+  qualityCertificateId?: string
 }
 
-// Production Workshift - Track shifts and workers
-export interface ProductionWorkshift extends BaseDocument {
-  productionOrderId: string
-  date: Timestamp | string
-  shiftNumber: 1 | 2 | 3
-  workers: string[]
-  unitsProduced: number
-  defects: number
-  notes?: string
-}
-
-// Maintenance - Equipment Master Catalog
-export interface Equipment extends BaseDocument {
-  nombre: string
-  planta: string
-  categoria: string
-  modelo: string
-  serie: string
-  estado: "operativo" | "mantenimiento" | "alerta" | "inactivo"
-  lecturaActual: number
-  unidadLectura: "hrs" | "km" | "ciclos"
-  ultimoMantenimiento: Timestamp | string
-  proximoMantenimiento: Timestamp | string
-  frecuenciaMantenimiento: number // in units of unidadLectura
-  frecuenciaDias?: number // optional: also track by calendar days
-  costoEquipo: number
-  tecnicoResponsable?: string
-  ubicacionFisica?: string
-  notas?: string
-}
-
-// Preventive Maintenance Plans
-export interface PreventiveMaintenance extends BaseDocument {
-  equipoId: string
-  equipoNombre: string
-  descripcion: string
-  frecuencia: number
-  tipoFrecuencia: "dias" | "horas" | "km" | "ciclos"
-  tareasPlaneadas: TareaMantenimiento[]
-  refaccionesRequeridas: RefaccionRequerida[]
-  tiempoEstimado: number // minutes
-  tecnicoRecomendado?: string
-  costoEstimado: number
-  estado: "activa" | "inactiva"
-  criticidad: "baja" | "media" | "alta"
-  ultimaEjecucion?: Timestamp | string
-  proximaEjecucion?: Timestamp | string
-}
-
-export interface TareaMantenimiento {
-  id: string
-  descripcion: string
-  completada?: boolean
-  requerida: boolean
-}
-
-export interface RefaccionRequerida {
-  id: string
-  nombre: string
-  codigo?: string
-  cantidad: number
-  costo: number
-  disponible?: boolean
-}
-
-// Work Orders - OT's
-export interface WorkOrder extends BaseDocument {
-  folio: string // OT-001
-  equipoId: string
-  equipoNombre: string
-  tipo: "preventivo" | "correctivo"
-  fechaCreacion: Timestamp | string
-  fechaProgramada: Timestamp | string
-  fechaCompletada?: Timestamp | string
-  tecnicoAsignado: string
-  prioridad: "baja" | "media" | "alta" | "urgente"
-  estado: "pendiente" | "programada" | "en_proceso" | "completada" | "cancelada"
-  tareasRealizadas: TareaEjecucion[]
-  causaFalla?: string // For correctiva
-  refaccionesUtilizadas: RefaccionUtilizada[]
-  costoManoObra: number
-  costoRefacciones: number
-  costoParo: number // downtime cost
+export interface MaterialUsage {
+  materialId: string
+  materialName: string
+  sku: string
+  quantityUsed: number
+  unit: string
+  lote?: string | null
+  costoUnitario: number
   costoTotal: number
-  horasRealizadas?: number
-  preventivoPlanId?: string // Link to PM plan if auto-generated
-  observaciones?: string
-  evidenciaUrls?: string[] // Photos/documents
-}
-
-export interface TareaEjecucion extends TareaMantenimiento {
-  fechaRealizacion?: Timestamp | string
-  tecnico?: string
-}
-
-export interface RefaccionUtilizada {
-  id: string
-  nombre: string
-  codigo?: string
-  cantidad: number
-  costo: number
-  fechaUso?: Timestamp | string
-  lote?: string
-}
-
-// Equipment Readings - Lecturas
-export interface EquipmentReading extends BaseDocument {
-  equipoId: string
-  equipoNombre: string
-  lecturaActual: number
-  unidad: string
-  fecha: Timestamp | string
-  tecnico: string
-  proximaLecturaEsperada?: number
-  proximaFechaLectura?: Timestamp | string
-  observaciones?: string
-}
-
-// Maintenance Technicians
-export interface MaintenanceTechnician extends BaseDocument {
-  nombre: string
-  especialidad: string[]
-  nivel: "junior" | "senior" | "supervisor"
-  telefono?: string
-  email?: string
-  turno?: string
-  disponible: boolean
+  almacenOrigenId: string
+  movementId: string // Link to stockMovement
 }
 
 // Customer Service-specific types for complete service management

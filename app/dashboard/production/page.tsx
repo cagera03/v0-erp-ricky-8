@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useProductionData } from "@/hooks/use-production-data"
+import { useWarehouseData } from "@/hooks/use-warehouse-data"
 import { ProductionOrdersTab } from "@/components/production/production-orders-tab"
 import { ProductionFormulasTab } from "@/components/production/production-formulas-tab"
 import { ProductionPlanningTab } from "@/components/production/production-planning-tab"
@@ -16,9 +17,10 @@ import { ProductionResultsTab } from "@/components/production/production-results
 
 function ProductionContent() {
   const productionData = useProductionData()
+  const { warehouses, products } = useWarehouseData()
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [priorityFilter, setPriorityFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("Todos")
+  const [priorityFilter, setPriorityFilter] = useState<string>("Todas")
 
   const formatNumber = (value: number | undefined | null): string => {
     return (value || 0).toString()
@@ -26,6 +28,17 @@ function ProductionContent() {
 
   const formatPercent = (value: number | undefined | null): string => {
     return `${value || 0}%`
+  }
+
+  const handleGenerateRequisitions = async () => {
+    if (confirm("¿Calcular requerimientos de materiales y generar sugerencias de requisición?")) {
+      try {
+        await productionData.calculateMaterialRequirements()
+        alert("Requerimientos calculados exitosamente. Revise la pestaña Planeación.")
+      } catch (error: any) {
+        alert(error.message || "Error al calcular requerimientos")
+      }
+    }
   }
 
   return (
@@ -36,13 +49,9 @@ function ProductionContent() {
           <p className="text-muted-foreground mt-2">Control total de fórmulas, órdenes, materiales y calidad</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleGenerateRequisitions}>
             <FileText className="w-4 h-4 mr-2" />
             Generar Requisición
-          </Button>
-          <Button>
-            <Factory className="w-4 h-4 mr-2" />
-            Nueva Orden
           </Button>
         </div>
       </div>
@@ -64,7 +73,7 @@ function ProductionContent() {
                 <SelectValue placeholder="Estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="Todos">Todos</SelectItem>
                 <SelectItem value="pending">Pendiente</SelectItem>
                 <SelectItem value="in_process">En Proceso</SelectItem>
                 <SelectItem value="completed">Completado</SelectItem>
@@ -76,7 +85,7 @@ function ProductionContent() {
                 <SelectValue placeholder="Prioridad" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="Todas">Todas</SelectItem>
                 <SelectItem value="low">Baja</SelectItem>
                 <SelectItem value="normal">Normal</SelectItem>
                 <SelectItem value="high">Alta</SelectItem>
@@ -133,12 +142,17 @@ function ProductionContent() {
         <TabsContent value="orders">
           <ProductionOrdersTab
             orders={productionData.orders}
+            products={products}
+            formulas={productionData.formulas}
+            warehouses={warehouses}
             searchQuery={searchQuery}
             statusFilter={statusFilter}
             priorityFilter={priorityFilter}
             onCreate={productionData.createOrder}
             onUpdate={productionData.updateOrder}
             onDelete={productionData.removeOrder}
+            onReserveMaterials={productionData.reserveMaterials}
+            onCompleteProduction={productionData.completeProduction}
           />
         </TabsContent>
 
@@ -156,6 +170,7 @@ function ProductionContent() {
             materials={productionData.materials}
             searchQuery={searchQuery}
             onUpdate={productionData.updateMaterialPlanning}
+            onGenerateRequisitions={handleGenerateRequisitions}
           />
         </TabsContent>
 
