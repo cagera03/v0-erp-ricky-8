@@ -1516,3 +1516,262 @@ export interface ExchangeRate extends BaseDocument {
   fuente?: string // e.g., "Banco de México", "Manual"
   activo: boolean
 }
+
+// Maintenance Module - ERP 2026-2027
+// Equipment (Catálogo de Equipos)
+export interface Equipment extends BaseDocument {
+  // Identificación
+  codigo: string // Código único del equipo
+  nombre: string // Nombre descriptivo
+  categoria: string // Tipo: "Maquinaria", "Vehículo", "Herramienta", "Infraestructura"
+  subcategoria?: string
+
+  // Ubicación
+  planta: string // Planta donde se encuentra
+  area: string // Área específica (producción, almacén, etc.)
+  ubicacionDetalle?: string
+
+  // Especificaciones técnicas
+  marca?: string
+  modelo?: string
+  numeroSerie?: string
+  añoFabricacion?: number
+
+  // Gestión
+  criticidad: "baja" | "media" | "alta" | "critica" // Importancia operativa
+  responsableId?: string // Usuario responsable
+  responsableNombre?: string
+  estado: "operativo" | "mantenimiento" | "fuera_servicio" | "baja"
+
+  // Lecturas (para mantenimiento preventivo basado en uso)
+  tipoLectura?: "horas" | "kilometros" | "ciclos" | "ninguno"
+  lecturaActual: number // Lectura actual
+  unidadLectura: string // "hrs", "km", "ciclos"
+
+  // Mantenimiento
+  frecuenciaMantenimiento?: number // Cada cuánto (en unidad de lectura o días)
+  proximoMantenimiento?: Timestamp | string
+  ultimoMantenimiento?: Timestamp | string
+
+  // Costos estimados
+  costoAdquisicion?: number
+  costoMantenimientoAnual?: number
+
+  // Relación con almacén (para refacciones)
+  almacenRefaccionesId?: string // Almacén donde se guardan las refacciones de este equipo
+  almacenRefaccionesNombre?: string
+
+  // Documentación
+  manuales?: string[] // URLs a manuales
+  certificados?: string[] // URLs a certificados
+
+  notas?: string
+}
+
+// Preventive Maintenance (Mantenimientos Preventivos)
+export interface PreventiveMaintenance extends BaseDocument {
+  // Identificación
+  codigo: string
+  nombre: string
+  descripcion?: string
+
+  // Equipo relacionado
+  equipoId: string
+  equipoNombre: string
+  equipoCodigo: string
+
+  // Tipo de preventivo
+  tipo: "calendario" | "lectura" // Por fechas o por uso
+
+  // Periodicidad por calendario
+  periodicidadDias?: number // Cada cuántos días
+  proximaFechaEjecucion?: Timestamp | string
+
+  // Periodicidad por lectura
+  periodicidadLectura?: number // Cada cuántas unidades de lectura
+  lecturaBaseUltimaEjecucion?: number
+  proximaLectura?: number
+
+  // Última ejecución
+  ultimaEjecucion?: Timestamp | string
+  ultimaOrdenTrabajoId?: string
+
+  // Actividades (checklist)
+  actividades: {
+    descripcion: string
+    orden: number
+    tiempoEstimado?: number // minutos
+    requiereEvidencia: boolean
+  }[]
+
+  // Refacciones requeridas
+  refacciones?: {
+    productoId: string
+    sku: string
+    nombre: string
+    cantidad: number
+    unidad: string
+  }[]
+
+  // Recursos
+  tecnicoAsignadoId?: string
+  tecnicoAsignadoNombre?: string
+  tiempoEstimadoTotal: number // minutos
+
+  // Generación automática
+  generacionAutomatica: boolean // Si se generan OTs automáticamente
+  diasAnticipacion: number // Días de anticipación para generar OT
+
+  estado: "activo" | "inactivo" | "suspendido"
+
+  notas?: string
+}
+
+// Work Order (Órdenes de Trabajo)
+export interface WorkOrder extends BaseDocument {
+  // Identificación
+  folio: string
+  tipo: "preventivo" | "correctivo" | "predictivo" | "mejora"
+
+  // Equipo
+  equipoId: string
+  equipoNombre: string
+  equipoCodigo: string
+  equipoPlanta: string
+
+  // Si proviene de un preventivo
+  preventivo?: {
+    preventivoId: string
+    preventivoCodigo: string
+    preventivoNombre: string
+    generadoAutomaticamente: boolean
+  }
+
+  // Estado y prioridad
+  estado: "draft" | "programada" | "en_proceso" | "completada" | "cancelada"
+  prioridad: "baja" | "media" | "alta" | "urgente"
+
+  // Fechas
+  fechaCreacion: Timestamp | string
+  fechaProgramada: Timestamp | string
+  fechaInicio?: Timestamp | string
+  fechaFinalizacion?: Timestamp | string
+
+  // Asignación
+  tecnicoAsignadoId?: string
+  tecnicoAsignadoNombre?: string
+  tecnicoEjecutorId?: string // Puede ser diferente al asignado
+  tecnicoEjecutorNombre?: string
+
+  // Descripción del trabajo
+  descripcionProblema?: string // Para correctivos
+  actividades: WorkOrderActivity[] // Checklist con evidencias
+
+  // Refacciones utilizadas
+  refacciones?: WorkOrderSparePart[]
+
+  // Tiempos
+  tiempoEstimado?: number // minutos
+  tiempoReal?: number // minutos
+  tiempoParoEquipo?: number // minutos de paro operacional
+
+  // Costos
+  costoManoObra: number
+  costoRefacciones: number
+  costoParo: number // Costo del tiempo de paro
+  costoTotal: number
+
+  // Resultados y evidencias
+  observaciones?: string
+  evidencias?: {
+    tipo: "foto" | "documento" | "video"
+    url: string
+    descripcion?: string
+    timestamp: Timestamp | string
+  }[]
+
+  // Aprobación y firma
+  requiereAprobacion: boolean
+  aprobadoPor?: string
+  fechaAprobacion?: Timestamp | string
+
+  // Lectura del equipo al momento del mantenimiento
+  lecturaEquipo?: number
+
+  notas?: string
+}
+
+export interface WorkOrderActivity {
+  descripcion: string
+  orden: number
+  completada: boolean
+  evidenciaRequerida: boolean
+  evidenciaUrl?: string
+  observaciones?: string
+  completadaPor?: string
+  fechaCompletada?: Timestamp | string
+}
+
+export interface WorkOrderSparePart {
+  productoId: string
+  sku: string
+  nombre: string
+  cantidad: number
+  unidad: string
+  costoUnitario: number
+  costoTotal: number
+  almacenId?: string // De qué almacén se tomó
+  almacenNombre?: string
+  movimientoId?: string // ID del movimiento de inventario generado
+  lote?: string
+  serie?: string
+}
+
+// Equipment Reading (Lecturas de Equipos)
+export interface EquipmentReading extends BaseDocument {
+  // Equipo
+  equipoId: string
+  equipoNombre: string
+  equipoCodigo: string
+
+  // Lectura
+  fecha: Timestamp | string
+  lectura: number
+  unidad: string // "hrs", "km", "ciclos"
+
+  // Registro
+  registradoPor: string
+  registradoPorNombre: string
+
+  // Observaciones
+  estadoEquipo?: "operativo" | "alerta" | "falla"
+  observaciones?: string
+
+  // Imagen de evidencia (opcional)
+  evidenciaUrl?: string
+}
+
+// Maintenance Technician (Técnicos de Mantenimiento)
+export interface MaintenanceTechnician extends BaseDocument {
+  // Datos personales
+  nombre: string
+  email?: string
+  telefono?: string
+
+  // Especialidades
+  especialidades: string[] // "Mecánica", "Eléctrica", "Electrónica", "Neumática", etc.
+  certificaciones?: string[]
+
+  // Asignación
+  plantas: string[] // En qué plantas puede trabajar
+  disponible: boolean
+
+  // Estadísticas
+  otsCompletadas: number
+  otsEnProceso: number
+  promedioTiempoRespuesta?: number // minutos
+
+  estado: "activo" | "inactivo" | "vacaciones"
+
+  notas?: string
+}
