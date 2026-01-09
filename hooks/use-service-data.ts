@@ -1,16 +1,21 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useCallback } from "react"
 import { useFirestore } from "./use-firestore"
+import { useAuth } from "./use-auth"
 import { COLLECTIONS } from "@/lib/firestore"
-import type { ServiceTicket, ServiceMetrics, Customer } from "@/lib/types"
-import { orderBy } from "firebase/firestore"
+import type { ServiceTicket, ServiceMetrics, Customer, StockMovement } from "@/lib/types"
+import { orderBy, Timestamp } from "firebase/firestore"
 
 export function useServiceData() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || user?.uid || ""
+  const userId = user?.uid || ""
+
   const {
     items: tickets,
     loading: loadingTickets,
-    create: createTicket,
+    create: createTicketBase,
     update: updateTicket,
     remove: removeTicket,
   } = useFirestore<ServiceTicket>(COLLECTIONS.serviceTickets, [orderBy("fechaCreacion", "desc")], true)
@@ -18,6 +23,12 @@ export function useServiceData() {
   const { items: customers, loading: loadingCustomers } = useFirestore<Customer>(
     COLLECTIONS.customers,
     [orderBy("nombre", "asc")],
+    true,
+  )
+
+  const { items: stockMovements } = useFirestore<StockMovement>(
+    COLLECTIONS.stockMovements,
+    [orderBy("fecha", "desc")],
     true,
   )
 
@@ -29,10 +40,44 @@ export function useServiceData() {
       const num = Number.parseInt(ticket.numero.split("-")[1] || "0")
       return Math.max(max, num)
     }, 0)
-    return `TKT-${String(maxNumber + 1).padStart(3, "0")}`
+    return `TKT-${String(maxNumber + 1).padStart(4, "0")}`
   }, [tickets])
 
-  // Calculate KPIs
+  const createTicket = useCallback(
+    async (data: Omit<ServiceTicket, "id" | "createdAt" | "updatedAt" | "companyId" | "userId">) => {
+      const now = Timestamp.now()
+
+      const sanitized: Omit<ServiceTicket, "id"> = {
+        ...data,
+        companyId,
+        userId,
+        createdAt: now,
+        updatedAt: now,
+        fechaCreacion: now,
+        fechaUltimaActualizacion: now,
+        etiquetas: data.etiquetas || [],
+        adjuntos: data.adjuntos || [],
+        notasInternas: data.notasInternas || [],
+        historial: data.historial || [],
+        slaViolado: false,
+        ordenVentaId: data.ordenVentaId || null,
+        ordenVentaFolio: data.ordenVentaFolio || null,
+        remisionId: data.remisionId || null,
+        remisionFolio: data.remisionFolio || null,
+        facturaId: data.facturaId || null,
+        facturaFolio: data.facturaFolio || null,
+        lineasDevolucion: data.lineasDevolucion || [],
+        almacenDevolucionId: data.almacenDevolucionId || null,
+        almacenDevolucionNombre: data.almacenDevolucionNombre || null,
+        estadoDevolucion: data.estadoDevolucion || null,
+        movimientosInventarioIds: data.movimientosInventarioIds || [],
+      }
+
+      return await createTicketBase(sanitized)
+    },
+    [createTicketBase, companyId, userId],
+  )
+
   const totalTickets = useMemo(() => {
     return (tickets || []).length
   }, [tickets])
@@ -122,6 +167,7 @@ export function useServiceData() {
   return {
     tickets: tickets || [],
     customers: customers || [],
+    stockMovements: stockMovements || [],
     createTicket,
     updateTicket,
     removeTicket,

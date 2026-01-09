@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -72,6 +72,17 @@ export function TicketFormDialog({ open, onOpenChange, onSubmit, customers, next
           },
         ],
         slaViolado: false,
+        ordenVentaId: null,
+        ordenVentaFolio: null,
+        remisionId: null,
+        remisionFolio: null,
+        facturaId: null,
+        facturaFolio: null,
+        lineasDevolucion: [],
+        almacenDevolucionId: null,
+        almacenDevolucionNombre: null,
+        estadoDevolucion: null,
+        movimientosInventarioIds: [],
       }
 
       await onSubmit(ticket)
@@ -86,6 +97,7 @@ export function TicketFormDialog({ open, onOpenChange, onSubmit, customers, next
         categoria: "soporte_tecnico",
         prioridad: "media",
       })
+      onOpenChange(false)
     } catch (error) {
       console.error("Error creating ticket:", error)
       alert("Error al crear el ticket")
@@ -110,6 +122,9 @@ export function TicketFormDialog({ open, onOpenChange, onSubmit, customers, next
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nuevo Ticket - {nextTicketNumber}</DialogTitle>
+          <DialogDescription>
+            Crea un nuevo ticket de servicio al cliente. Completa la información del cliente y describe el problema.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -989,57 +989,40 @@ export interface ServiceTicket extends BaseDocument {
   agenteAsignado?: string
   departamento?: string
   etiquetas: string[]
-  adjuntos: TicketAttachment[]
-  notasInternas: TicketNote[]
-  historial: TicketActivity[]
+  adjuntos: Attachment[]
+  notasInternas: Note[]
+  historial: Activity[]
   calificacion?: number // 1-5 stars (CSAT)
   comentarioCliente?: string
   tiempoPrimeraRespuesta?: number // Minutes
   tiempoResolucion?: number // Minutes
   slaViolado: boolean
+
+  ordenVentaId?: string | null
+  ordenVentaFolio?: string | null
+  remisionId?: string | null
+  remisionFolio?: string | null
+  facturaId?: string | null
+  facturaFolio?: string | null
+  lineasDevolucion?: ReturnLine[]
+  almacenDevolucionId?: string | null
+  almacenDevolucionNombre?: string | null
+  estadoDevolucion?: "pendiente" | "aprobada" | "rechazada" | "procesada" | null
+  movimientosInventarioIds?: string[] // IDs of stock movements created for returns
 }
 
-export interface TicketAttachment {
+export interface ReturnLine {
   id: string
-  nombre: string
-  url: string
-  tipo: string
-  tamanio: number
-  fecha: Timestamp | string
-  subidoPor: string
-}
-
-export interface TicketNote {
-  id: string
-  fecha: Timestamp | string
-  autor: string
-  contenido: string
-  interno: boolean
-}
-
-export interface TicketActivity {
-  id: string
-  fecha: Timestamp | string
-  usuario: string
-  tipo: "creacion" | "actualizacion" | "comentario" | "asignacion" | "estado" | "resolucion" | "calificacion"
-  descripcion: string
-  campoModificado?: string
-  valorAnterior?: string
-  valorNuevo?: string
-}
-
-export interface ServiceMetrics {
-  totalTickets: number
-  ticketsAbiertos: number
-  ticketsEnProceso: number
-  ticketsResueltos: number
-  tiempoPromedioRespuesta: number // Hours
-  tiempoPromedioResolucion: number // Hours
-  satisfaccionPromedio: number // 1-5
-  cumplimientoSLA: number // Percentage
-  distribucionCanales: Record<string, number>
-  distribucionCategorias: Record<string, number>
-  distribucionSatisfaccion: Record<number, number> // Rating count
+  productoId: string
+  productoNombre: string
+  sku: string
+  cantidad: number
+  lote?: string | null
+  serie?: string | null
+  motivo: string
+  estadoDisposicion: "reingreso_stock" | "cuarentena" | "scrap" | "reparacion"
+  evidenciaUrl?: string
+  notas?: string
 }
 
 // Field Services - Complete on-site service management with geolocation
@@ -1414,7 +1397,7 @@ export interface Invoice extends BaseDocument {
 
   // CFDI (Mexico)
   usoCFDI?: string
-  uuid?: string
+  uuid?: string // After "timbrado"
   fechaTimbrado?: Timestamp | string
   xmlUrl?: string
   pdfUrl?: string
@@ -1774,4 +1757,25 @@ export interface MaintenanceTechnician extends BaseDocument {
   estado: "activo" | "inactivo" | "vacaciones"
 
   notas?: string
+}
+
+// Declare missing interfaces
+interface Attachment {
+  id: string
+  filename: string
+  url: string
+}
+
+interface Note {
+  id: string
+  content: string
+  timestamp: Timestamp | string
+}
+
+interface Activity {
+  id: string
+  description: string
+  timestamp: Timestamp | string
+  userId?: string
+  userName?: string
 }
