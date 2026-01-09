@@ -19,8 +19,13 @@ export function AppHeader() {
 
   const getUserInitials = () => {
     if (!user) return "U"
-    return user.name
-      .split(" ")
+
+    const name = user.name || user.email || "Usuario"
+    const nameParts = name.split(" ").filter(Boolean)
+
+    if (nameParts.length === 0) return "U"
+
+    return nameParts
       .map((n) => n[0])
       .join("")
       .toUpperCase()

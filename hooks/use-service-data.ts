@@ -37,8 +37,10 @@ export function useServiceData() {
   // Generate unique ticket number
   const generateTicketNumber = useMemo(() => {
     const maxNumber = (tickets || []).reduce((max, ticket) => {
-      const num = Number.parseInt(ticket.numero.split("-")[1] || "0")
-      return Math.max(max, num)
+      const numero = ticket.numero || ""
+      const parts = numero.split("-")
+      const num = parts.length > 1 ? Number.parseInt(parts[1], 10) : 0
+      return Math.max(max, isNaN(num) ? 0 : num)
     }, 0)
     return `TKT-${String(maxNumber + 1).padStart(4, "0")}`
   }, [tickets])

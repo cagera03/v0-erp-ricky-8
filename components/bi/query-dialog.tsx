@@ -44,14 +44,17 @@ export function QueryDialog({ query, onClose, onSave }: QueryDialogProps) {
 
     setSaving(true)
     try {
+      const fieldsString = formData.fields || ""
+      const fieldsArray = fieldsString
+        .split(",")
+        .map((f) => f.trim())
+        .filter(Boolean)
+
       await onSave({
         name: formData.name.trim(),
         description: formData.description.trim(),
         dataSource: formData.dataSource,
-        fields: formData.fields
-          .split(",")
-          .map((f) => f.trim())
-          .filter(Boolean),
+        fields: fieldsArray,
         filters: query?.filters || {},
         aggregations: query?.aggregations || [],
       })

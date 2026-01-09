@@ -32,6 +32,12 @@ export function ReportDialog({ report, onClose, onSave }: ReportDialogProps) {
 
     setSaving(true)
     try {
+      const recipientsString = formData.recipients || ""
+      const recipientsArray = recipientsString
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean)
+
       await onSave({
         name: formData.name.trim(),
         queryId: formData.queryId || "default-query",
@@ -40,10 +46,7 @@ export function ReportDialog({ report, onClose, onSave }: ReportDialogProps) {
           frequency: formData.frequency as "daily" | "weekly" | "monthly",
           nextRun: null,
         },
-        recipients: formData.recipients
-          .split(",")
-          .map((r) => r.trim())
-          .filter(Boolean),
+        recipients: recipientsArray,
       })
     } finally {
       setSaving(false)

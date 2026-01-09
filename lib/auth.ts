@@ -37,21 +37,27 @@ async function getUserProfile(firebaseUser: FirebaseUser): Promise<User> {
 
     if (userSnap.exists()) {
       const data = userSnap.data()
+      const email = firebaseUser.email || ""
+      const emailName = email ? email.split("@")[0] : "Usuario"
+
       return {
         uid: firebaseUser.uid,
-        email: firebaseUser.email || "",
-        name: data?.name || firebaseUser.email?.split("@")[0] || "Usuario",
+        email: email,
+        name: data?.name || emailName,
         role: data?.role || "user",
         createdAt: data?.createdAt?.toDate(),
         companyId: data?.companyId,
       }
     }
 
+    const email = firebaseUser.email || ""
+    const emailName = email ? email.split("@")[0] : "Usuario"
+
     // Create new user profile if doesn't exist
     const newUser: User = {
       uid: firebaseUser.uid,
-      email: firebaseUser.email || "",
-      name: firebaseUser.email?.split("@")[0] || "Usuario",
+      email: email,
+      name: emailName,
       role: "user", // Default role
       createdAt: new Date(),
     }
@@ -112,11 +118,14 @@ export const authService = {
       const db = getFirebaseDb()
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
 
+      const safeEmail = userCredential.user.email || email || ""
+      const emailName = safeEmail ? safeEmail.split("@")[0] : "Usuario"
+
       // Create user profile in Firestore
       const newUser: User = {
         uid: userCredential.user.uid,
-        email: userCredential.user.email || email,
-        name: name || email.split("@")[0],
+        email: safeEmail,
+        name: name || emailName,
         role: "user",
         createdAt: new Date(),
       }

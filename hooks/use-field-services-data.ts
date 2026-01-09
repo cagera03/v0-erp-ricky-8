@@ -53,8 +53,10 @@ export function useFieldServicesData() {
   // Generate unique service number
   const generateServiceNumber = useMemo(() => {
     const maxNumber = services.reduce((max, service) => {
-      const num = Number.parseInt(service.folio?.split("-")[1] || "0")
-      return Math.max(max, num)
+      const folio = service.folio || ""
+      const parts = folio.split("-")
+      const num = parts.length > 1 ? Number.parseInt(parts[1], 10) : 0
+      return Math.max(max, isNaN(num) ? 0 : num)
     }, 0)
     return `SRV-${String(maxNumber + 1).padStart(4, "0")}`
   }, [services])
