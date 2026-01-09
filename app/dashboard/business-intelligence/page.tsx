@@ -1,0 +1,195 @@
+"use client"
+
+import { useState } from "react"
+import { useBiData } from "@/hooks/use-bi-data"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { BarChart3, List, Sparkles, Map, Calendar, Download, Plus } from "lucide-react"
+import { DashboardsTab } from "@/components/bi/dashboards-tab"
+import { QueriesTab } from "@/components/bi/queries-tab"
+import { AssistantTab } from "@/components/bi/assistant-tab"
+import { MapsTab } from "@/components/bi/maps-tab"
+import { ScheduledTab } from "@/components/bi/scheduled-tab"
+import { useAuth } from "@/lib/auth-context"
+
+const tabs = [
+  { id: "dashboards", name: "Tablero", icon: BarChart3 },
+  { id: "queries", name: "Consultas", icon: List },
+  { id: "assistant", name: "Asistente", icon: Sparkles },
+  { id: "maps", name: "Mapas", icon: Map },
+  { id: "scheduled", name: "Programados", icon: Calendar },
+]
+
+export default function BusinessIntelligencePage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ""
+  const [activeTab, setActiveTab] = useState("dashboards")
+
+  const {
+    queries,
+    dashboards,
+    reports,
+    exports: biExports,
+    loading,
+    metrics,
+    addQuery,
+    updateQuery,
+    deleteQuery,
+    addDashboard,
+    updateDashboard,
+    deleteDashboard,
+    addReport,
+    updateReport,
+    deleteReport,
+    createExport,
+    getDataSource,
+  } = useBiData(companyId)
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-balance">Business Intelligence</h1>
+          <p className="text-muted-foreground mt-2">
+            Analice su información con consultas personalizadas, tableros y reportes automáticos
+          </p>
+        </div>
+        <Button>
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Consulta
+        </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <List className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex items-center gap-1 text-sm text-green-600">
+                <span>+6</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">Consultas Activas</p>
+              <p className="text-2xl font-bold mt-1">{loading ? "..." : metrics.consultasActivas}</p>
+              <p className="text-xs text-muted-foreground mt-1">Guardadas</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="flex items-center gap-1 text-sm text-green-600">
+                <span>+2</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">Tableros Creados</p>
+              <p className="text-2xl font-bold mt-1">{loading ? "..." : metrics.tablerosCreados}</p>
+              <p className="text-xs text-muted-foreground mt-1">Dashboards</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="flex items-center gap-1 text-sm text-green-600">
+                <span>+3</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">Reportes Programados</p>
+              <p className="text-2xl font-bold mt-1">{loading ? "..." : metrics.reportesProgramados}</p>
+              <p className="text-xs text-muted-foreground mt-1">Activos</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                <Download className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="flex items-center gap-1 text-sm text-green-600">
+                <span>+45</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground">Exportaciones</p>
+              <p className="text-2xl font-bold mt-1">{loading ? "..." : metrics.exportaciones}</p>
+              <p className="text-xs text-muted-foreground mt-1">Completadas</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4 overflow-x-auto pb-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.name}
+              </button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {activeTab === "dashboards" && (
+            <DashboardsTab
+              dashboards={dashboards}
+              loading={loading}
+              onAddDashboard={addDashboard}
+              onUpdateDashboard={updateDashboard}
+              onDeleteDashboard={deleteDashboard}
+            />
+          )}
+
+          {activeTab === "queries" && (
+            <QueriesTab
+              queries={queries}
+              loading={loading}
+              onAddQuery={addQuery}
+              onUpdateQuery={updateQuery}
+              onDeleteQuery={deleteQuery}
+              getDataSource={getDataSource}
+            />
+          )}
+
+          {activeTab === "assistant" && <AssistantTab onAddQuery={addQuery} onAddDashboard={addDashboard} />}
+
+          {activeTab === "maps" && (
+            <MapsTab queries={queries} getDataSource={getDataSource} onCreateExport={createExport} />
+          )}
+
+          {activeTab === "scheduled" && (
+            <ScheduledTab
+              reports={reports}
+              loading={loading}
+              onAddReport={addReport}
+              onUpdateReport={updateReport}
+              onDeleteReport={deleteReport}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

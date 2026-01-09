@@ -112,6 +112,11 @@ export const COLLECTIONS = {
   benefitsDeductions: "benefitsDeductions",
   candidates: "candidates",
   trainingCourses: "trainingCourses",
+
+  biQueries: "biQueries",
+  biDashboards: "biDashboards",
+  biReports: "biReports",
+  biExports: "biExports",
 } as const
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS]

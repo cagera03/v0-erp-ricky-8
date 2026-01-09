@@ -2526,3 +2526,143 @@ export interface TrainingCourse extends BaseDocument {
   calificacionMinima?: number
   notas?: string
 }
+
+// ============================================================================
+// BUSINESS INTELLIGENCE MODULE
+// ============================================================================
+
+export interface BIQuery extends BaseDocument {
+  nombre: string
+  descripcion?: string
+  categoria: "ventas" | "inventario" | "compras" | "financiero" | "rrhh" | "produccion" | "custom"
+  // Data source configuration
+  dataSource: string // Collection name: "salesOrders", "stockMovements", etc.
+  fields: string[] // Fields to include
+  filters: BIFilter[]
+  aggregations: BIAggregation[]
+  sorting?: BISorting[]
+  limit?: number
+  // Execution
+  ultimaEjecucion?: Timestamp | string | null
+  resultados?: number
+  tiempoEjecucion?: number // milliseconds
+  estado: "activa" | "pausada" | "error"
+  errorMessage?: string
+  // Ownership
+  creadoPor: string
+  compartida: boolean
+  favorita: boolean
+  userId: string
+  status: "active" | "inactive"
+}
+
+export interface BIFilter {
+  campo: string
+  operador: "igual" | "diferente" | "mayor" | "menor" | "mayor_igual" | "menor_igual" | "contiene" | "entre" | "en"
+  valor: any
+  valorFin?: any // For "entre"
+  activo: boolean
+}
+
+export interface BIAggregation {
+  campo: string
+  funcion: "sum" | "avg" | "count" | "min" | "max" | "count_distinct"
+  alias: string
+}
+
+export interface BISorting {
+  campo: string
+  direccion: "asc" | "desc"
+}
+
+export interface BIDashboard extends BaseDocument {
+  nombre: string
+  descripcion?: string
+  categoria: "ventas" | "operaciones" | "financiero" | "ejecutivo" | "custom"
+  widgets: BIWidget[]
+  layout: "grid" | "flex"
+  columnas: number
+  // Refresh settings
+  autoRefresh: boolean
+  refreshInterval?: number // minutes
+  ultimaActualizacion?: Timestamp | string | null
+  // Ownership
+  creadoPor: string
+  compartido: boolean
+  publico: boolean
+  favorito: boolean
+  predeterminado: boolean
+  userId: string
+  status: "active" | "inactive"
+}
+
+export interface BIWidget {
+  id: string
+  tipo: "kpi" | "chart" | "table" | "map"
+  titulo: string
+  subtitulo?: string
+  // Data configuration
+  queryId?: string // Reference to BIQuery
+  dataSource?: string // Or inline data source
+  filters?: BIFilter[]
+  aggregations?: BIAggregation[]
+  // Chart specific
+  chartType?: "bar" | "line" | "pie" | "area" | "donut" | "scatter"
+  xAxis?: string
+  yAxis?: string
+  groupBy?: string
+  // KPI specific
+  valor?: number
+  meta?: number
+  unidad?: string
+  tendencia?: "up" | "down" | "neutral"
+  porcentajeCambio?: number
+  // Layout
+  posicion: { x: number; y: number; w: number; h: number }
+  color?: string
+}
+
+export interface BIReport extends BaseDocument {
+  nombre: string
+  descripcion?: string
+  categoria: "ventas" | "inventario" | "compras" | "financiero" | "rrhh" | "custom"
+  tipo: "automatico" | "bajo_demanda"
+  // Query configuration
+  queryId?: string
+  dashboardId?: string
+  dataSource?: string
+  filters?: BIFilter[]
+  // Schedule (for automatic reports)
+  programado: boolean
+  frecuencia?: "diario" | "semanal" | "mensual" | "trimestral"
+  diaSemana?: number // 0-6 for weekly
+  diaMes?: number // 1-31 for monthly
+  hora: string // "HH:MM"
+  // Recipients
+  destinatarios: string[] // Emails
+  formato: "pdf" | "excel" | "csv"
+  // Status
+  ultimaEjecucion?: Timestamp | string | null
+  proximaEjecucion?: Timestamp | string | null
+  estado: "activo" | "pausado" | "error"
+  errorMessage?: string
+  // Ownership
+  creadoPor: string
+  userId: string
+  status: "active" | "inactive"
+}
+
+export interface BIExport extends BaseDocument {
+  tipo: "query" | "dashboard" | "report"
+  referenceId: string
+  referenceName: string
+  formato: "pdf" | "excel" | "csv"
+  estado: "generando" | "completado" | "error"
+  progreso: number // 0-100
+  tamano?: number // bytes
+  urlDescarga?: string
+  fechaExpiracion?: Timestamp | string
+  errorMessage?: string
+  creadoPor: string
+  userId: string
+}
