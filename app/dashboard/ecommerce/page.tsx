@@ -2,7 +2,6 @@
 import { useAuth } from "@/contexts/auth-context"
 import { useEcommerceData } from "@/hooks/use-ecommerce-data"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ShoppingCart, Users, Package, TrendingUp } from "lucide-react"
 import { OverviewTab } from "@/components/ecommerce/overview-tab"
@@ -53,24 +52,21 @@ export default function ECommercePage() {
   const stats = [
     {
       name: "Pedidos del Mes",
-      value: ecommerceData.ordenesPendientes.toString(),
-      change: "+18%",
+      value: ecommerceData.ordenesPendientes,
       icon: ShoppingCart,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
       name: "Clientes Activos",
-      value: "156",
-      change: "+12%",
+      value: ecommerceData.clientesActivos,
       icon: Users,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
       name: "Productos Publicados",
-      value: ecommerceData.productosPublicados.toString(),
-      change: "+5%",
+      value: ecommerceData.productosPublicados,
       icon: Package,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
@@ -78,7 +74,6 @@ export default function ECommercePage() {
     {
       name: "Ventas Online",
       value: `$${ecommerceData.ventasDelMes.toLocaleString()}`,
-      change: "+23%",
       icon: TrendingUp,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
@@ -100,9 +95,6 @@ export default function ECommercePage() {
                 <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
                   <stat.icon className={`w-6 h-6 ${stat.color}`} />
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-600">
-                  {stat.change}
-                </Badge>
               </div>
               <div className="mt-4">
                 <p className="text-sm text-muted-foreground">{stat.name}</p>

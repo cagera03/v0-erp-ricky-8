@@ -27,6 +27,10 @@ export function useEcommerceData(companyId: string | null) {
 
     if (!companyId || !userId) {
       console.log("[v0] useEcommerceData - No companyId or userId, skipping subscriptions")
+      setProducts([])
+      setOrders([])
+      setReviews([])
+      setPromotions([])
       setLoading(false)
       return
     }
@@ -77,9 +81,16 @@ export function useEcommerceData(companyId: string | null) {
   }, [companyId, userId])
 
   const productosPublicados = safeProducts.filter((p) => p.publicado).length
+
   const ordenesPendientes = safeOrders.filter(
     (o) => o.estadoPedido === "pendiente" || o.estadoPedido === "confirmado",
   ).length
+
+  const clientesActivos = new Set(
+    safeOrders
+      .filter((o) => o.clienteId) // Only count orders with clientId
+      .map((o) => o.clienteId),
+  ).size
 
   const ventasDelMes = safeOrders
     .filter((o) => {
@@ -190,6 +201,7 @@ export function useEcommerceData(companyId: string | null) {
     loading,
     productosPublicados,
     ordenesPendientes,
+    clientesActivos,
     ventasDelMes,
     reviewsPendientes,
     createProduct,
