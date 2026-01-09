@@ -22,11 +22,14 @@ export function AnalyticsTab() {
     return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value)
   }
 
-  // Enrich top sales with variant/attribute data
   const enrichedTopSales = useMemo(() => {
-    return analytics.topSales.map((sale) => {
-      const variant = sale.variantId ? variants.find((v) => v.id === sale.variantId) : null
-      const product = products.find((p) => p.id === sale.productId)
+    const safeTopSales = Array.isArray(analytics?.topSales) ? analytics.topSales : []
+    const safeVariants = Array.isArray(variants) ? variants : []
+    const safeProducts = Array.isArray(products) ? products : []
+
+    return safeTopSales.map((sale) => {
+      const variant = sale.variantId ? safeVariants.find((v) => v && v.id === sale.variantId) : null
+      const product = safeProducts.find((p) => p && p.id === sale.productId)
 
       return {
         ...sale,
@@ -34,7 +37,15 @@ export function AnalyticsTab() {
         productDetails: product,
       }
     })
-  }, [analytics.topSales, variants, products])
+  }, [analytics?.topSales, variants, products])
+
+  const safeAnalytics = {
+    expiringProducts: Array.isArray(analytics?.expiringProducts) ? analytics.expiringProducts : [],
+    topSales: Array.isArray(analytics?.topSales) ? analytics.topSales : [],
+    movementsSummary: analytics?.movementsSummary || { entries: 0, exits: 0 },
+    returns: Array.isArray(analytics?.returns) ? analytics.returns : [],
+    maintenanceByProduct: analytics?.maintenanceByProduct || {},
+  }
 
   if (loading) {
     return <div className="text-center py-12 text-muted-foreground">Cargando analítica...</div>
@@ -53,7 +64,7 @@ export function AnalyticsTab() {
             </div>
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">Próximos a Caducar</p>
-              <p className="text-2xl font-bold mt-1">{analytics.expiringProducts.length}</p>
+              <p className="text-2xl font-bold mt-1">{safeAnalytics.expiringProducts.length}</p>
               <p className="text-xs text-muted-foreground mt-1">Lotes en 30 días</p>
             </div>
           </CardContent>
@@ -68,7 +79,7 @@ export function AnalyticsTab() {
             </div>
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">Top Ventas</p>
-              <p className="text-2xl font-bold mt-1">{analytics.topSales.length}</p>
+              <p className="text-2xl font-bold mt-1">{safeAnalytics.topSales.length}</p>
               <p className="text-xs text-muted-foreground mt-1">Productos más vendidos</p>
             </div>
           </CardContent>
@@ -84,10 +95,10 @@ export function AnalyticsTab() {
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">Movimientos</p>
               <p className="text-2xl font-bold mt-1">
-                {analytics.movementsSummary.entries + analytics.movementsSummary.exits}
+                {safeAnalytics.movementsSummary.entries + safeAnalytics.movementsSummary.exits}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                ↑ {analytics.movementsSummary.entries} / ↓ {analytics.movementsSummary.exits}
+                ↑ {safeAnalytics.movementsSummary.entries} / ↓ {safeAnalytics.movementsSummary.exits}
               </p>
             </div>
           </CardContent>
@@ -102,7 +113,7 @@ export function AnalyticsTab() {
             </div>
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">Devoluciones</p>
-              <p className="text-2xl font-bold mt-1">{analytics.returns.length}</p>
+              <p className="text-2xl font-bold mt-1">{safeAnalytics.returns.length}</p>
               <p className="text-xs text-muted-foreground mt-1">Tickets activos</p>
             </div>
           </CardContent>
@@ -127,14 +138,14 @@ export function AnalyticsTab() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {analytics.expiringProducts.length === 0 ? (
+              {safeAnalytics.expiringProducts.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No hay productos próximos a caducar</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {analytics.expiringProducts.map((item, idx) => (
+                  {safeAnalytics.expiringProducts.map((item, idx) => (
                     <div key={idx} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -185,7 +196,7 @@ export function AnalyticsTab() {
                             <h4 className="font-semibold">{sale.productName}</h4>
                             {sale.variantId && <Badge variant="outline">Variante</Badge>}
                           </div>
-                          {Object.keys(sale.attributes).length > 0 && (
+                          {sale.attributes && Object.keys(sale.attributes).length > 0 && (
                             <div className="flex gap-2 mt-2 flex-wrap">
                               {Object.entries(sale.attributes).map(([key, value]) => (
                                 <Badge key={key} variant="secondary" className="text-xs">
@@ -197,8 +208,8 @@ export function AnalyticsTab() {
                           <p className="text-sm text-muted-foreground mt-2">ID: {sale.productId}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-green-600">{formatCurrency(sale.revenue)}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{sale.quantity} unidades</p>
+                          <p className="text-lg font-bold text-green-600">{formatCurrency(sale.revenue || 0)}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{sale.quantity || 0} unidades</p>
                         </div>
                       </div>
                     </div>
@@ -226,7 +237,7 @@ export function AnalyticsTab() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Entradas</p>
-                      <p className="text-2xl font-bold">{analytics.movementsSummary.entries.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">{safeAnalytics.movementsSummary.entries.toLocaleString()}</p>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">Compras, Producción, Devoluciones</p>
@@ -239,7 +250,7 @@ export function AnalyticsTab() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Salidas</p>
-                      <p className="text-2xl font-bold">{analytics.movementsSummary.exits.toLocaleString()}</p>
+                      <p className="text-2xl font-bold">{safeAnalytics.movementsSummary.exits.toLocaleString()}</p>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground">Ventas, Consumo, Ajustes</p>
@@ -251,12 +262,12 @@ export function AnalyticsTab() {
                   <span className="text-sm font-medium">Balance Neto</span>
                   <span
                     className={`text-lg font-bold ${
-                      analytics.movementsSummary.entries - analytics.movementsSummary.exits >= 0
+                      safeAnalytics.movementsSummary.entries - safeAnalytics.movementsSummary.exits >= 0
                         ? "text-green-600"
                         : "text-red-600"
                     }`}
                   >
-                    {(analytics.movementsSummary.entries - analytics.movementsSummary.exits).toLocaleString()}
+                    {(safeAnalytics.movementsSummary.entries - safeAnalytics.movementsSummary.exits).toLocaleString()}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -276,14 +287,14 @@ export function AnalyticsTab() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {analytics.returns.length === 0 ? (
+              {safeAnalytics.returns.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <RotateCcw className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No hay devoluciones registradas</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {analytics.returns.map((returnItem) => (
+                  {safeAnalytics.returns.map((returnItem) => (
                     <div key={returnItem.ticketId} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between mb-3">
                         <div>
@@ -309,19 +320,20 @@ export function AnalyticsTab() {
                       </div>
 
                       <div className="space-y-2">
-                        {returnItem.items.map((item, idx) => (
-                          <div key={idx} className="pl-4 border-l-2 border-orange-300">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm font-medium">{item.productoNombre}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  Motivo: {item.motivo || "No especificado"}
-                                </p>
+                        {Array.isArray(returnItem.items) &&
+                          returnItem.items.map((item, idx) => (
+                            <div key={idx} className="pl-4 border-l-2 border-orange-300">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium">{item.productoNombre || "Sin nombre"}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Motivo: {item.motivo || "No especificado"}
+                                  </p>
+                                </div>
+                                <p className="text-sm font-bold">{item.cantidad || 0} uds</p>
                               </div>
-                              <p className="text-sm font-bold">{item.cantidad} uds</p>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </div>
                   ))}
