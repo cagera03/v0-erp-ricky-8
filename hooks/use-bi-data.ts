@@ -21,8 +21,8 @@ import type {
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 
-export function useBiData() {
-  const { user, companyId } = useAuth()
+export function useBiData(companyId: string) {
+  const { user } = useAuth()
   const { toast } = useToast()
 
   // BI collections
@@ -48,7 +48,7 @@ export function useBiData() {
 
   useEffect(() => {
     if (!userId || !companyId) {
-      console.log("[v0] [BI] Waiting for userId and companyId")
+      console.log("[v0] [BI] Waiting for userId and companyId. userId:", userId, "companyId:", companyId)
       setLoading(false)
       return
     }

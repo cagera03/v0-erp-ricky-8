@@ -21,7 +21,7 @@ const tabs = [
 ]
 
 export default function BusinessIntelligencePage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const companyId = user?.companyId || ""
   const userId = user?.uid || ""
 
@@ -49,14 +49,36 @@ export default function BusinessIntelligencePage() {
     getDataSource,
   } = useBiData(companyId)
 
-  if (!companyId && !loading) {
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!companyId) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md">
-          <CardContent className="p-6">
-            <p className="text-center text-muted-foreground">
-              No se pudo obtener el companyId del perfil del usuario. Por favor, verifica tu sesión.
+          <CardHeader>
+            <h2 className="text-xl font-semibold">Configuración requerida</h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Para usar Business Intelligence, necesitas estar asociado a una empresa.
             </p>
+            <p className="text-sm text-muted-foreground">
+              CompanyId: {companyId || "No disponible"}
+              <br />
+              UserId: {userId}
+            </p>
+            <Button onClick={() => window.location.reload()} className="w-full">
+              Recargar página
+            </Button>
           </CardContent>
         </Card>
       </div>
