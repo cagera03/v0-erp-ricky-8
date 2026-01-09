@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/contexts/auth-context"
 import { Loader2 } from "lucide-react"
 
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/register"]

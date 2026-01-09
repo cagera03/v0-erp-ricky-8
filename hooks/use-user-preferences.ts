@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { getFirebaseDb } from "@/lib/firebase"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/contexts/auth-context"
 
 export interface InventoryTablePreferences {
   visibleColumns: {

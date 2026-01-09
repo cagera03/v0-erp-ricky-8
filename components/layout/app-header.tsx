@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/contexts/auth-context"
 
 export function AppHeader() {
   const { user, logout } = useAuth()

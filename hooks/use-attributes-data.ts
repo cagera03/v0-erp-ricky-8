@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback } from "react"
 import { useFirestore } from "@/hooks/use-firestore"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/contexts/auth-context"
 import { Timestamp, orderBy } from "firebase/firestore"
 import { COLLECTIONS } from "@/lib/firestore"
 import type {
