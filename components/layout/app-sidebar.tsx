@@ -21,6 +21,7 @@ import {
   MapPin,
   Smartphone,
   ShoppingBasket,
+  Store,
 } from "lucide-react"
 
 const navigation = [
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Bancos", href: "/dashboard/banking", icon: Building2, color: "blue" },
   { name: "Clientes / CRM", href: "/dashboard/clients", icon: Users, color: "blue" },
   { name: "Ventas", href: "/dashboard/ventas/ordenes", icon: ShoppingBasket, color: "blue" },
+  { name: "Punto de Venta", href: "/dashboard/punto-venta", icon: Store, color: "blue" },
   { name: "Proveedores", href: "/dashboard/suppliers", icon: Package, color: "blue" },
   { name: "Almacén", href: "/dashboard/warehouse", icon: Warehouse, color: "blue" },
   { name: "Contabilidad", href: "/dashboard/accounting", icon: Calculator, color: "blue" },
