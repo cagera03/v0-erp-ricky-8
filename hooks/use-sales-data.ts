@@ -325,11 +325,21 @@ export function useSalesData(companyId: string, userId?: string) {
   const stats = {
     totalOrders: salesOrders.length,
     confirmedOrders: salesOrders.filter(
-      (o) => o.status === "confirmed" || o.status === "in_progress" || o.status === "delivered",
+      (o) =>
+        o.status === "confirmed" ||
+        o.status === "in_progress" ||
+        o.status === "delivered" ||
+        o.status === "invoiced_partial",
     ).length,
     quotations: salesOrders.filter((o) => o.type === "quotation" && o.status === "draft").length,
     totalRevenue: salesOrders
-      .filter((o) => o.status === "confirmed" || o.status === "delivered" || o.status === "invoiced")
+      .filter(
+        (o) =>
+          o.status === "confirmed" ||
+          o.status === "delivered" ||
+          o.status === "invoiced" ||
+          o.status === "invoiced_partial",
+      )
       .reduce((sum, order) => sum + (order.total || 0), 0),
     pendingDeliveries: deliveries.filter((d) => d.status === "ready" || d.status === "in_transit").length,
     unpaidInvoices: invoices.filter((i) => i.paymentStatus === "unpaid" || i.paymentStatus === "partial").length,

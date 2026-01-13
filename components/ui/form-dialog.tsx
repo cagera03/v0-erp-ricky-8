@@ -141,6 +141,11 @@ export function FormDialog({
                       type={field.type || "text"}
                       placeholder={field.placeholder}
                       value={currentValue}
+                      onFocus={() => {
+                        if (field.type === "number" && (currentValue === "0" || currentValue === 0)) {
+                          setValues({ ...values, [field.name]: "" })
+                        }
+                      }}
                       onChange={(e) => setValues({ ...values, [field.name]: e.target.value })}
                       required={field.required}
                     />

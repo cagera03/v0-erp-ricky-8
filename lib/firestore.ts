@@ -92,6 +92,7 @@ export const COLLECTIONS = {
   salesOrderActivities: "salesOrderActivities",
   productBatches: "productBatches", // Lotes y trazabilidad
   exchangeRates: "exchangeRates", // Tipos de cambio
+  calendarEvents: "calendarEvents",
   ecommerceProducts: "ecommerceProducts", // Published catalog
   ecommerceOrders: "ecommerceOrders",
   ecommerceCustomers: "ecommerceCustomers",

@@ -55,6 +55,7 @@ export default function OrdenesVentaPage() {
       in_progress: { label: "En Proceso", variant: "secondary" as const },
       delivered: { label: "Entregada", variant: "default" as const },
       invoiced: { label: "Facturada", variant: "default" as const },
+      invoiced_partial: { label: "Facturada parcial", variant: "outline" as const },
       cancelled: { label: "Cancelada", variant: "destructive" as const },
     }
     const config = variants[status] || variants.draft
@@ -101,11 +102,7 @@ export default function OrdenesVentaPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Órdenes de Venta</h1>
-          <p className="text-muted-foreground mt-1">Gestión completa de cotizaciones, órdenes, remisiones y facturas</p>
-        </div>
-        <Button onClick={() => router.push("/dashboard/ventas/ordenes/new")} size="lg">
+<Button onClick={() => router.push("/dashboard/ventas/ordenes/new")} size="lg">
           <Plus className="w-4 h-4 mr-2" />
           Nueva Orden
         </Button>
@@ -185,6 +182,7 @@ export default function OrdenesVentaPage() {
                 <SelectItem value="in_progress">En Proceso</SelectItem>
                 <SelectItem value="delivered">Entregada</SelectItem>
                 <SelectItem value="invoiced">Facturada</SelectItem>
+                <SelectItem value="invoiced_partial">Facturada parcial</SelectItem>
                 <SelectItem value="cancelled">Cancelada</SelectItem>
               </SelectContent>
             </Select>

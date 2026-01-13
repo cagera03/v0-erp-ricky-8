@@ -20,14 +20,7 @@ export default function WarehousePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Almacén</h1>
-        <p className="text-muted-foreground mt-2">
-          Gestión de múltiples almacenes, control de inventario y movimientos
-        </p>
-      </div>
-
-      {/* KPI Cards */}
+{/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-6">

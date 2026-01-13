@@ -29,6 +29,8 @@ import { useWarehouseData } from "@/hooks/use-warehouse-data"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { getFirebaseStorage } from "@/lib/firebase"
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage"
 
 interface SupplierProductDialogProps {
   open: boolean
@@ -88,6 +90,7 @@ export function SupplierProductDialog({
   const [supplierSearch, setSupplierSearch] = useState("")
   const [productSearch, setProductSearch] = useState("")
   const [openExpiryCalendar, setOpenExpiryCalendar] = useState(false)
+  const [imageUploading, setImageUploading] = useState(false)
 
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -98,7 +101,14 @@ export function SupplierProductDialog({
     productoId: "",
     nombre: "",
     descripcion: "",
+    tipoProducto: "producto",
+    claveSat: "",
+    unidadSat: "",
+    impuestosAplicables: [],
+    categorias: [],
+    controlInventario: true,
     sku: "",
+    imagenUrl: "",
     codigoProveedor: "",
     nombreProveedor: "",
     unidadMedida: "PZA",
@@ -231,6 +241,12 @@ export function SupplierProductDialog({
         cantidadMaxima: product.cantidadMaxima || 0,
         activo: product.activo !== false,
         notasEntrega: product.notasEntrega || "",
+        tipoProducto: product.tipoProducto || "producto",
+        claveSat: product.claveSat || "",
+        unidadSat: product.unidadSat || "",
+        impuestosAplicables: product.impuestosAplicables || [],
+        categorias: product.categorias || [],
+        controlInventario: product.controlInventario !== false,
       })
 
       if (product.proveedorId) {
@@ -280,7 +296,14 @@ export function SupplierProductDialog({
         productoId: formData.productoId || "",
         nombre: formData.nombre || "",
         descripcion: formData.descripcion || "",
+        tipoProducto: (formData as any).tipoProducto || "producto",
+        claveSat: (formData as any).claveSat || "",
+        unidadSat: (formData as any).unidadSat || "",
+        impuestosAplicables: (formData as any).impuestosAplicables || [],
+        categorias: (formData as any).categorias || [],
+        controlInventario: (formData as any).controlInventario !== false,
         sku: formData.sku || "",
+        imagenUrl: (formData as any).imagenUrl || "",
         codigoProveedor: formData.codigoProveedor || "",
         nombreProveedor: formData.nombreProveedor || "",
         unidadMedida: formData.unidadMedida || "PZA",
@@ -347,10 +370,38 @@ export function SupplierProductDialog({
       productoId: prod.id,
       nombre: prod.name,
       descripcion: prod.description || "",
+      imagenUrl: (prod as any).imageUrl || "",
       precioBase: prod.cost || 0,
       costoUltimo: prod.cost || 0,
+      tipoProducto: (prod as any).tipoProducto || "producto",
+      claveSat: (prod as any).claveSat || "",
+      unidadSat: (prod as any).unidadSat || "",
+      impuestosAplicables: (prod as any).impuestosAplicables || [],
+      categorias: (prod as any).categorias || [],
+      controlInventario: (prod as any).trackInventory !== false,
     })
     setOpenProductCombo(false)
+  }
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setImageUploading(true)
+    try {
+      const storage = getFirebaseStorage()
+      const targetId = formData.productoId || "temp"
+      const safeName = file.name.replace(/\s+/g, "_")
+      const objectRef = ref(storage, `product-images/${targetId}/${Date.now()}-${safeName}`)
+      await uploadBytes(objectRef, file)
+      const url = await getDownloadURL(objectRef)
+      setFormData({ ...formData, imagenUrl: url } as any)
+    } catch (error) {
+      console.error("[SupplierProductDialog] Error uploading image:", error)
+    } finally {
+      setImageUploading(false)
+      event.target.value = ""
+    }
   }
 
   const handleCreateNewProduct = async () => {
@@ -365,8 +416,17 @@ export function SupplierProductDialog({
         price: 0,
         cost: 0,
         stock: 0,
-        unit: "PZA",
-        status: "active",
+        baseUnit: "PZA",
+        unitsPerPackage: 1,
+        currency: "MXN",
+        trackInventory: true,
+        trackingType: "ninguno",
+        requiresExpiry: false,
+        active: true,
+        tipoProducto: "producto",
+        claveSat: "",
+        unidadSat: "",
+        impuestosAplicables: [],
       }
 
       const newProductId = await createInventoryProduct(newProductData)
@@ -602,7 +662,120 @@ export function SupplierProductDialog({
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                     rows={3}
                   />
+                                <div className="space-y-2">
+                  <Label htmlFor="imagenArchivo">Imagen del Producto</Label>
+                  <Input
+                    id="imagenArchivo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={imageUploading}
+                  />
+                  {imageUploading ? (
+                    <p className="text-xs text-muted-foreground">Subiendo imagen...</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Selecciona una imagen para el inventario.</p>
+                  )}
+                  {(formData as any).imagenUrl && (
+                    <div className="mt-2 overflow-hidden rounded-lg border">
+                      <img
+                        src={(formData as any).imagenUrl}
+                        alt="Imagen del producto"
+                        className="h-32 w-full object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
+
+                 <div className="space-y-3">
+                   <Label className="text-base font-semibold">Datos fiscales y maestro</Label>
+                   <div className="grid gap-4 md:grid-cols-2">
+                     <div className="space-y-2">
+                       <Label htmlFor="tipoProducto">Tipo</Label>
+                       <Select
+                         value={(formData as any).tipoProducto || "producto"}
+                         onValueChange={(value) => setFormData({ ...formData, tipoProducto: value } as any)}
+                       >
+                         <SelectTrigger>
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="producto">Producto</SelectItem>
+                           <SelectItem value="servicio">Servicio</SelectItem>
+                         </SelectContent>
+                       </Select>
+                     </div>
+                     <div className="space-y-2">
+                       <Label htmlFor="claveSat">Clave SAT</Label>
+                       <Input
+                         id="claveSat"
+                         value={(formData as any).claveSat || ""}
+                         onChange={(e) => setFormData({ ...formData, claveSat: e.target.value } as any)}
+                         placeholder="01010101"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label htmlFor="unidadSat">Unidad SAT</Label>
+                       <Input
+                         id="unidadSat"
+                         value={(formData as any).unidadSat || ""}
+                         onChange={(e) => setFormData({ ...formData, unidadSat: e.target.value } as any)}
+                         placeholder="H87"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label htmlFor="impuestosAplicables">Impuestos aplicables</Label>
+                       <Input
+                         id="impuestosAplicables"
+                         value={((formData as any).impuestosAplicables || []).join(", ")}
+                         onChange={(e) =>
+                           setFormData({
+                             ...formData,
+                             impuestosAplicables: e.target.value
+                               .split(",")
+                               .map((item) => item.trim())
+                               .filter(Boolean),
+                           } as any)
+                         }
+                         placeholder="IVA, IEPS"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label htmlFor="categorias">Categorias</Label>
+                       <Input
+                         id="categorias"
+                         value={((formData as any).categorias || []).join(", ")}
+                         onChange={(e) =>
+                           setFormData({
+                             ...formData,
+                             categorias: e.target.value
+                               .split(",")
+                               .map((item) => item.trim())
+                               .filter(Boolean),
+                           } as any)
+                         }
+                         placeholder="Ferreteria, Consumible"
+                       />
+                     </div>
+                     <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                       <div>
+                         <Label htmlFor="controlInventario" className="cursor-pointer">
+                           Control de inventario
+                         </Label>
+                         <p className="text-xs text-muted-foreground">Desactiva si es servicio.</p>
+                       </div>
+                       <Switch
+                         id="controlInventario"
+                         checked={(formData as any).controlInventario !== false}
+                         onCheckedChange={(checked) =>
+                           setFormData({ ...formData, controlInventario: checked } as any)
+                         }
+                       />
+                     </div>
+                   </div>
+                 </div>
+
+</div>
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">

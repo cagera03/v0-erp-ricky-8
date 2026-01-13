@@ -1,8 +1,7 @@
 "use client"
 
-import { Bell, Search, LogOut, Settings, UserCircle } from "lucide-react"
+import { Bell, LogOut, Settings, UserCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,9 +12,47 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
 
 export function AppHeader() {
   const { user, logout } = useAuth()
+  const pathname = usePathname()
+
+  const moduleTitles: Record<string, string> = {
+    "/dashboard": "Panel de Control",
+    "/dashboard/clients": "Clientes / CRM",
+    "/dashboard/sales": "Ventas",
+    "/dashboard/ventas": "Ventas",
+    "/dashboard/inventory": "Inventario",
+    "/dashboard/warehouse": "Almacén",
+    "/dashboard/accounting": "Contabilidad",
+    "/dashboard/banking": "Bancos",
+    "/dashboard/production": "Producción",
+    "/dashboard/maintenance": "Mantenimiento",
+    "/dashboard/service": "Servicio",
+    "/dashboard/payroll": "Nómina / RRHH",
+    "/dashboard/field-services": "Field Services",
+    "/dashboard/reports": "Reportes",
+    "/dashboard/ecommerce": "E-Commerce",
+    "/dashboard/eprocurement": "E-Procurement",
+    "/dashboard/attributes": "Atributos",
+    "/dashboard/bi": "Business Intelligence",
+    "/dashboard/business-intelligence": "Business Intelligence",
+    "/dashboard/web-mobile": "ERP Web / Móvil",
+    "/dashboard/orders": "Órdenes",
+    "/dashboard/suppliers": "Proveedores",
+    "/dashboard/punto-venta": "Punto de Venta",
+    "/dashboard/calendar": "Calendario",
+    "/dashboard/settings": "Configuracion",
+    "/dashboard/facturacion": "Facturacion",
+  }
+
+  const resolvedTitle =
+    Object.keys(moduleTitles)
+      .sort((a, b) => b.length - a.length)
+      .find((key) => pathname === key || pathname.startsWith(key + "/")) || ""
+  const headerTitle = moduleTitles[resolvedTitle] || "Nexo ERP"
 
   const getUserInitials = () => {
     if (!user) return "U"
@@ -38,14 +75,10 @@ export function AppHeader() {
 
   return (
     <header className="h-16 border-b bg-card px-6 flex items-center justify-between gap-4">
-      <div className="flex-1 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar productos, órdenes, clientes..." className="pl-9" />
-        </div>
+      <div>
+        <h2 className="text-lg font-semibold">{headerTitle}</h2>
       </div>
-
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 ml-auto">
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
@@ -72,13 +105,17 @@ export function AppHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <UserCircle className="w-4 h-4 mr-2" />
-              Perfil
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings">
+                <UserCircle className="w-4 h-4 mr-2" />
+                Perfil
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="w-4 h-4 mr-2" />
-              Configuración
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings">
+                <Settings className="w-4 h-4 mr-2" />
+                Configuracion
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
@@ -91,3 +128,4 @@ export function AppHeader() {
     </header>
   )
 }
+

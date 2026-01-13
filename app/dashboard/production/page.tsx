@@ -44,11 +44,7 @@ function ProductionContent() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Producción</h1>
-          <p className="text-muted-foreground mt-2">Control total de fórmulas, órdenes, materiales y calidad</p>
-        </div>
-        <div className="flex gap-2">
+<div className="flex gap-2">
           <Button variant="outline" onClick={handleGenerateRequisitions}>
             <FileText className="w-4 h-4 mr-2" />
             Generar Requisición

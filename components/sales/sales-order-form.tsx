@@ -22,7 +22,7 @@ import { getNextFolio } from "@/lib/utils/folio-generator"
 import { SalesOrderLinesTab } from "./sales-order-lines-tab"
 import { GenerateDeliveryDialog } from "./generate-delivery-dialog"
 import { GenerateInvoiceDialog } from "./generate-invoice-dialog"
-import { serverTimestamp } from "firebase/firestore"
+import { serverTimestamp, where } from "firebase/firestore"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface SalesOrderFormProps {
@@ -62,7 +62,10 @@ export function SalesOrderForm({ salesOrderId, onSuccess, onCancel }: SalesOrder
   const { updateOrderStatus, sendOrderByEmail, printOrder, fulfillSalesOrder } = useSalesData(companyId, user?.uid)
 
   // Load customers and products
-  const { items: customers } = useFirestore<Customer>(COLLECTIONS.customers, companyId)
+  const { items: customers } = useFirestore<Customer>(
+    COLLECTIONS.customers,
+    companyId ? [where("companyId", "==", companyId)] : [],
+  )
   const { items: products } = useFirestore<Product>(COLLECTIONS.products, companyId)
   const { items: existingOrders } = useFirestore<SalesOrder>(COLLECTIONS.salesOrders, companyId)
 
@@ -260,7 +263,8 @@ export function SalesOrderForm({ salesOrderId, onSuccess, onCancel }: SalesOrder
   }
 
   const canGenerateDelivery = order.status === "confirmed" || order.status === "in_progress"
-  const canGenerateInvoice = order.status === "confirmed" || order.status === "delivered"
+  const canGenerateInvoice =
+    order.status === "confirmed" || order.status === "delivered" || order.status === "invoiced_partial"
 
   if (loading || loadingWarehouse) {
     return (
@@ -287,6 +291,7 @@ export function SalesOrderForm({ salesOrderId, onSuccess, onCancel }: SalesOrder
                     {order.status === "in_progress" && "En Proceso"}
                     {order.status === "delivered" && "Entregada"}
                     {order.status === "invoiced" && "Facturada"}
+                    {order.status === "invoiced_partial" && "Facturada parcial"}
                     {order.status === "cancelled" && "Cancelada"}
                   </Badge>
                 )}

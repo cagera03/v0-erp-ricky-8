@@ -67,13 +67,7 @@ export default function MaintenancePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Mantenimiento</h1>
-          <p className="text-muted-foreground mt-2">
-            Gestión integral de mantenimiento preventivo y correctivo de equipos
-          </p>
-        </div>
-        <Button>
+<Button>
           <Plus className="w-4 h-4 mr-2" />
           Nueva OT
         </Button>

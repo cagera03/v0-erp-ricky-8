@@ -96,11 +96,26 @@ export function GenerateInvoiceDialog({ salesOrder, open, onClose, onSuccess }: 
 
       const created = await addItem(COLLECTIONS.salesInvoices, invoice)
 
+      await addItem(COLLECTIONS.cfdi, {
+        tipo: "factura",
+        estatus: "borrador",
+        clienteId: salesOrder.customerId,
+        clienteNombre: salesOrder.customerName,
+        vendedor: user?.email || "",
+        salesOrderId: salesOrder.id,
+        subtotal: salesOrder.subtotal,
+        iva: salesOrder.taxTotal,
+        total: salesOrder.total,
+        facturacionTipo: "parcial",
+        montoFacturado: salesOrder.total,
+        companyId,
+      })
+
       // Update sales order
       const currentInvoiceIds = salesOrder.invoiceIds || []
       await updateItem(COLLECTIONS.salesOrders, salesOrder.id, {
         invoiceIds: [...currentInvoiceIds, created.id],
-        status: "invoiced",
+        status: "invoiced_partial",
       })
 
       // Log activity
@@ -110,8 +125,8 @@ export function GenerateInvoiceDialog({ salesOrder, open, onClose, onSuccess }: 
         timestamp: serverTimestamp(),
         userId: user?.uid,
         userName: user?.email || "Unknown",
-        action: "invoiced",
-        description: `Factura ${invoiceNumber} generada`,
+        action: "invoiced_partial",
+        description: `CFDI ${invoiceNumber} generado (facturacion parcial)`,
       })
 
       toast.success("Factura generada correctamente")

@@ -27,13 +27,7 @@ export default function WebMobilePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-balance">Nexo ERP Web / Móvil</h1>
-          <p className="text-muted-foreground mt-2">
-            Acceso completo a su ERP desde cualquier dispositivo, en cualquier momento y lugar
-          </p>
-        </div>
-        <Button>
+<Button>
           <Globe className="w-4 h-4 mr-2" />
           Configurar Acceso
         </Button>

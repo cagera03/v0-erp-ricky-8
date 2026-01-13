@@ -88,13 +88,7 @@ export default function BusinessIntelligencePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-balance">Business Intelligence</h1>
-          <p className="text-muted-foreground mt-2">
-            Analice su información con consultas personalizadas, tableros y reportes automáticos
-          </p>
-        </div>
-        <Button>
+<Button>
           <Plus className="w-4 h-4 mr-2" />
           Nueva Consulta
         </Button>

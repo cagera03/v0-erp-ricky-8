@@ -11,11 +11,7 @@ export default function EditSalesOrderPage({ params }: { params: Promise<{ id: s
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Orden de Venta</h1>
-          <p className="text-muted-foreground mt-1">Ver y editar orden de venta</p>
-        </div>
-      </div>
+</div>
 
       <SalesOrderForm
         salesOrderId={id}

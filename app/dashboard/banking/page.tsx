@@ -30,14 +30,7 @@ export default function BankingPage() {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Bancos</h1>
-          <p className="text-muted-foreground mt-2">
-            Gestión integral de cuentas bancarias, pagos, cobros y conciliación
-          </p>
-        </div>
-
-        {/* Stats Cards */}
+{/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardContent className="p-6">

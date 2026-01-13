@@ -19,6 +19,7 @@ const statusConfig = {
   in_progress: { label: "En Proceso", variant: "default" as const },
   delivered: { label: "Entregada", variant: "outline" as const },
   invoiced: { label: "Facturada", variant: "outline" as const },
+  invoiced_partial: { label: "Facturada parcial", variant: "outline" as const },
   cancelled: { label: "Cancelada", variant: "destructive" as const },
 }
 

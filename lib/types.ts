@@ -35,6 +35,10 @@ export interface Product extends BaseDocument {
   name: string
   description?: string
   category?: string
+  tipoProducto?: "producto" | "servicio"
+  claveSat?: string
+  unidadSat?: string
+  impuestosAplicables?: string[]
 
   // Unit configuration
   baseUnit: string // e.g., "KG", "PZA", "LT"
@@ -464,6 +468,12 @@ export interface SupplierProduct extends BaseDocument {
   sku: string
   nombre: string
   descripcion?: string
+  tipoProducto?: "producto" | "servicio"
+  claveSat?: string
+  unidadSat?: string
+  impuestosAplicables?: string[]
+  categorias?: string[]
+  controlInventario?: boolean
 
   // Supplier's product codes
   codigoProveedor?: string
@@ -1306,8 +1316,8 @@ export interface SalesOrder extends BaseDocument {
   customerId: string
   customerName: string
 
-  // Status workflow: draft → confirmed → in_progress → delivered → invoiced
-  status: "draft" | "confirmed" | "in_progress" | "delivered" | "invoiced" | "cancelled"
+  // Status workflow: draft -> confirmed -> in_progress -> delivered -> invoiced
+  status: "draft" | "quotation" | "confirmed" | "in_progress" | "delivered" | "invoiced" | "invoiced_partial" | "cancelled"
 
   // Items
   items: SalesOrderItem[]
@@ -1500,7 +1510,16 @@ export interface SalesOrderActivity {
   timestamp: Timestamp | string
   userId?: string
   userName?: string
-  action: "created" | "updated" | "confirmed" | "cancelled" | "delivered" | "invoiced" | "email_sent" | "printed"
+  action:
+    | "created"
+    | "updated"
+    | "confirmed"
+    | "cancelled"
+    | "delivered"
+    | "invoiced"
+    | "invoiced_partial"
+    | "email_sent"
+    | "printed"
   description: string
   metadata?: Record<string, any>
 }
@@ -2665,4 +2684,22 @@ export interface BIExport extends BaseDocument {
   errorMessage?: string
   creadoPor: string
   userId: string
+}
+
+// Calendar Events
+export interface CalendarEvent extends BaseDocument {
+  title: string
+  description?: string
+  startDate: Timestamp | string
+  endDate: Timestamp | string
+  allDay: boolean
+  eventType: "reunion" | "cita" | "tarea" | "recordatorio"
+  location?: string
+  attendees?: string[]
+  clientId?: string
+  clientName?: string
+  leadId?: string
+  leadName?: string
+  status: "programado" | "completado" | "cancelado"
+  color?: string
 }

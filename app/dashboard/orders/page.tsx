@@ -10,11 +10,7 @@ export default function OrdersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-balance">Órdenes</h1>
-          <p className="text-muted-foreground mt-2">Gestiona todas las órdenes de tu florería</p>
-        </div>
-        <Button>
+<Button>
           <Plus className="w-4 h-4 mr-2" />
           Nueva Orden
         </Button>

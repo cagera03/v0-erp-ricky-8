@@ -313,6 +313,12 @@ service cloud.firestore {
       allow update, delete: if isOwner(resource.data.userId);
     }
 
+    match /calendarEvents/{eventId} {
+      allow read: if isAuthenticated();
+      allow create: if hasValidUserId();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
     match /{collection}/{document} {
       allow read: if isAuthenticated();
       allow create: if hasValidUserId();

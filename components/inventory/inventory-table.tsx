@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Edit, Trash2, Search, Settings2, Download, PackagePlus } from "lucide-react"
+import { Edit, Trash2, Search, Settings2, Download, PackagePlus, Plus } from "lucide-react"
 import { useFirestore } from "@/hooks/use-firestore"
 import { useUserPreferences } from "@/hooks/use-user-preferences"
 import { useInventoryCalculations } from "@/hooks/use-inventory-calculations"
@@ -13,8 +13,9 @@ import { COLLECTIONS } from "@/lib/firestore"
 import { ColumnConfigModal } from "./column-config-modal"
 import { DemandPeriodSelector } from "./demand-period-selector"
 import { GoodsReceiptDialog } from "./goods-receipt-dialog"
-import { ProductFormDialog } from "./product-form-dialog"
+import { SupplierProductDialog } from "@/components/suppliers/supplier-product-dialog"
 import type { StockMovement } from "@/lib/types"
+import type { SupplierProduct } from "@/lib/types"
 
 interface Product {
   id: string
@@ -27,6 +28,13 @@ interface Product {
   supplier?: string
   leadTime?: number
   companyId?: string
+  tipoProducto?: "producto" | "servicio"
+  claveSat?: string
+  unidadSat?: string
+  impuestosAplicables?: string[]
+  categorias?: string[]
+  trackInventory?: boolean
+  active?: boolean
 }
 
 function getProductStatus(stock: number, minStock: number): "available" | "low" | "out" {
@@ -54,8 +62,9 @@ export function InventoryTable() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editingSupplierProduct, setEditingSupplierProduct] = useState<SupplierProduct | undefined>()
 
-  const { items: products, loading, remove, update } = useFirestore<Product>(COLLECTIONS.products, [], true)
+  const { items: products, loading, remove, update, create } = useFirestore<Product>(COLLECTIONS.products, [], true)
   const { preferences, loading: prefsLoading, savePreferences } = useUserPreferences()
   const { demandData, loading: demandLoading } = useInventoryCalculations(products, preferences.demandPeriodDays)
 
@@ -86,26 +95,117 @@ export function InventoryTable() {
     setReceiptDialogOpen(true)
   }
 
+  const mapProductToSupplierProduct = (product: Product): SupplierProduct => {
+    return {
+      id: product.id,
+      proveedorId: (product as any).supplierId || "",
+      proveedorNombre: product.supplier || "",
+      productoId: product.id,
+      sku: product.sku || "",
+      nombre: product.name || "",
+      descripcion: (product as any).description || "",
+      imagenUrl: (product as any).imageUrl || "",
+      tipoProducto: (product as any).tipoProducto || "producto",
+      claveSat: (product as any).claveSat || "",
+      unidadSat: (product as any).unidadSat || "",
+      impuestosAplicables: (product as any).impuestosAplicables || [],
+      categorias: (product as any).categorias || [],
+      controlInventario: (product as any).trackInventory !== false,
+      precioBase: product.price || 0,
+      monedaPrincipal: (product as any).currency || "MXN",
+      costoUltimo: (product as any).cost || 0,
+      unidadMedida: (product as any).baseUnit || "PZA",
+      unidadCompra: (product as any).purchaseUnit || (product as any).baseUnit || "PZA",
+      unidadesPorPresentacion: (product as any).unitsPerPackage || 1,
+      trackingType: (product as any).trackingType || "ninguno",
+      requiresExpiry: (product as any).requiresExpiry || false,
+      leadTimeMin: (product as any).leadTimeMin || product.leadTime || 0,
+      leadTimeMax: (product as any).leadTimeMax || product.leadTime || 0,
+      leadTimePromedio: (product as any).leadTimePromedio || product.leadTime || 0,
+      cantidadMinima: product.minStock || 1,
+      cantidadMaxima: (product as any).maxStock || 0,
+      activo: (product as any).active !== false,
+      notas: (product as any).notes || "",
+      notasEntrega: (product as any).notasEntrega || "",
+      precios: (product as any).precios,
+    } as SupplierProduct
+  }
+
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product)
+    setEditingSupplierProduct(mapProductToSupplierProduct(product))
     setEditDialogOpen(true)
   }
 
-  const handleSaveProduct = async (data: Partial<Product>) => {
-    if (!editingProduct) return
+  const handleAddProduct = () => {
+    setEditingProduct(null)
+    setEditingSupplierProduct(undefined)
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveProduct = async (data: Partial<SupplierProduct>) => {
+    const mapped: Partial<Product> & Record<string, any> = {
+      name: data.nombre || editingProduct?.name || "",
+      sku: data.sku || editingProduct?.sku || "",
+      category:
+        ((data as any).categorias && (data as any).categorias[0]) ||
+        (data as any).categoria ||
+        editingProduct?.category ||
+        "",
+      categorias: (data as any).categorias || (editingProduct as any)?.categorias || [],
+      tipoProducto: (data as any).tipoProducto || (editingProduct as any)?.tipoProducto || "producto",
+      claveSat: (data as any).claveSat || (editingProduct as any)?.claveSat || "",
+      unidadSat: (data as any).unidadSat || (editingProduct as any)?.unidadSat || "",
+      impuestosAplicables: (data as any).impuestosAplicables || (editingProduct as any)?.impuestosAplicables || [],
+      price: data.precioBase ?? editingProduct?.price ?? 0,
+      cost: data.costoUltimo ?? data.precioBase ?? (editingProduct as any)?.cost ?? 0,
+      minStock: data.cantidadMinima ?? editingProduct?.minStock ?? 0,
+      stock: editingProduct?.stock ?? 0,
+      supplier: data.proveedorNombre || editingProduct?.supplier || "",
+      imageUrl: (data as any).imagenUrl || (editingProduct as any)?.imageUrl || "",
+      leadTime: data.leadTimePromedio ?? editingProduct?.leadTime ?? 0,
+      baseUnit: data.unidadMedida || (editingProduct as any)?.baseUnit || "PZA",
+      purchaseUnit: data.unidadCompra || (editingProduct as any)?.purchaseUnit || "PZA",
+      unitsPerPackage: data.unidadesPorPresentacion || (editingProduct as any)?.unitsPerPackage || 1,
+      trackingType: data.trackingType || (editingProduct as any)?.trackingType || "ninguno",
+      requiresExpiry: data.requiresExpiry || false,
+      trackInventory: (data as any).controlInventario !== false,
+      active: data.activo !== false,
+      notes: data.notas || (editingProduct as any)?.notes || "",
+      notasEntrega: data.notasEntrega || (editingProduct as any)?.notasEntrega || "",
+      currency: data.monedaPrincipal || (editingProduct as any)?.currency || "MXN",
+      precios: data.precios,
+      leadTimeMin: data.leadTimeMin,
+      leadTimeMax: data.leadTimeMax,
+      leadTimePromedio: data.leadTimePromedio,
+      cantidadMaxima: data.cantidadMaxima,
+    }
+
     try {
-      await update(editingProduct.id, data)
+      if (editingProduct?.id) {
+        await update(editingProduct.id, mapped)
+      } else if (data.productoId) {
+        await update(data.productoId, mapped)
+      } else {
+        await create(mapped as Omit<Product, "id">)
+      }
     } catch (error) {
       console.error("[InventoryTable] Error updating product:", error)
       alert("Error al guardar el producto")
     } finally {
       setEditDialogOpen(false)
       setEditingProduct(null)
+      setEditingSupplierProduct(undefined)
     }
   }
 
   const handleSaveReceipt = async (receiptData: Partial<StockMovement>) => {
     await createStockMovement(receiptData)
+    if (selectedProduct) {
+      const receivedQty = Number(receiptData.cantidad || 0)
+      const nextStock = (selectedProduct.stock || 0) + (Number.isNaN(receivedQty) ? 0 : receivedQty)
+      await update(selectedProduct.id, { stock: nextStock })
+    }
     setReceiptDialogOpen(false)
     setSelectedProduct(null)
   }
@@ -181,6 +281,10 @@ export function InventoryTable() {
                   className="pl-9"
                 />
               </div>
+              <Button onClick={handleAddProduct}>
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Producto
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
@@ -372,10 +476,10 @@ export function InventoryTable() {
         />
       )}
 
-      <ProductFormDialog
+      <SupplierProductDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
-        product={editingProduct}
+        product={editingSupplierProduct}
         onSave={handleSaveProduct}
       />
     </>

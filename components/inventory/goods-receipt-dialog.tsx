@@ -66,8 +66,8 @@ export function GoodsReceiptDialog({ open, onOpenChange, productId, productName,
         ...formData,
         productoId: productId,
         productoNombre: productName,
-        fechaCaducidad: fechaCaducidad?.toISOString(),
-        fechaFabricacion: fechaFabricacion?.toISOString(),
+        fechaCaducidad: fechaCaducidad ? fechaCaducidad.toISOString() : null,
+        fechaFabricacion: fechaFabricacion ? fechaFabricacion.toISOString() : null,
         fecha: new Date().toISOString(),
       }
       await onSave(receiptData)

@@ -9,7 +9,6 @@ import { Plus, ShoppingCart, FileCheck, DollarSign, Truck } from "lucide-react"
 import { useSuppliersData } from "@/hooks/use-suppliers-data"
 import { SuppliersTab } from "@/components/suppliers/suppliers-tab"
 import { DocumentsTab } from "@/components/suppliers/documents-tab"
-import { ProductsTab } from "@/components/suppliers/products-tab"
 import { PayablesTab } from "@/components/suppliers/payables-tab"
 import { StatisticsTab } from "@/components/suppliers/statistics-tab"
 import { SupplierFormDialog } from "@/components/suppliers/supplier-form-dialog"
@@ -31,11 +30,7 @@ export default function SuppliersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-balance">Proveedores</h1>
-          <p className="text-muted-foreground mt-2">Gestiona compras, materiales, gastos y cuentas por pagar</p>
-        </div>
-        <Button onClick={() => setShowSupplierDialog(true)}>
+<Button onClick={() => setShowSupplierDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Proveedor
         </Button>
@@ -119,7 +114,6 @@ export default function SuppliersPage() {
         <TabsList>
           <TabsTrigger value="suppliers">Proveedores</TabsTrigger>
           <TabsTrigger value="documents">Documentos</TabsTrigger>
-          <TabsTrigger value="products">Productos</TabsTrigger>
           <TabsTrigger value="payables">Cuentas por Pagar</TabsTrigger>
           <TabsTrigger value="statistics">Estadísticas</TabsTrigger>
         </TabsList>
@@ -130,10 +124,6 @@ export default function SuppliersPage() {
 
         <TabsContent value="documents">
           <DocumentsTab />
-        </TabsContent>
-
-        <TabsContent value="products">
-          <ProductsTab />
         </TabsContent>
 
         <TabsContent value="payables">
